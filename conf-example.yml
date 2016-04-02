@@ -8,7 +8,7 @@ adapter:
             user: "lisa@theevilcat.com"
             pass: "abcdefg"
             nick: "Lisa Bot"
-interceptor:
+responder:
     active:
         echo:
             exec: /vagrant/dev/golang/bin/lisabot-echo

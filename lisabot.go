@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -16,17 +18,26 @@ type config struct {
 }
 
 type commandBlock struct {
-	Source string `json:"sender"`
+	Id      string   `json:"id"`
+	Action  string   `json:"action"`
+	Type    string   `json:"type"`
+	Time    int      `json:"time"`
+	Data    string   `json:"data"`
+	Array   []string `json:"array"`
+	Options []string `json:"options"`
 }
 
 type messageBlock struct {
+	Message string `json:"message"`
+	From    string `json:"from"`
+	Room    string `json:"room"`
 }
 
-type block struct {
-	BlockType string        `json:"type"`
-	Source    string        `json:"source"`
-	Command   *commandBlock `json:"command"`
-	Message   *messageBlock `json:"message"`
+type query struct {
+	Type    string        `json:"type"`
+	Source  string        `json:"source"`
+	Command *commandBlock `json:"command"`
+	Message *messageBlock `json:"message"`
 }
 
 func main() {
@@ -97,26 +108,41 @@ func listen(server net.Listener, connChan chan *net.Conn) {
 }
 
 func serve(conn *net.Conn, quitChan chan int) {
-	buf := make([]byte, 128)
 
+	debugReader, debugWriter := io.Pipe()
+	streamIn := io.TeeReader(*conn, debugWriter)
+
+	go monitor(debugReader)
+
+	decoder := json.NewDecoder(streamIn)
+
+	var block query
 	for {
-		count, err := (*conn).Read(buf)
+		err := decoder.Decode(&block)
 
 		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+
+		fmt.Println("Type: ", block.Type)
+		fmt.Println("Source: ", block.Source)
+	}
+}
+
+func monitor(debugReader io.Reader) {
+	buf := make([]byte, 2048)
+
+	for {
+		count, err := debugReader.Read(buf)
+
+		if err == nil {
+			fmt.Println("Debug: ", string(buf[:count]))
+		} else {
 			fmt.Println("Error: ", err)
 			if err.Error() == "EOF" {
 				fmt.Println("EOF detected")
 				break
 			}
-		}
-
-		str := string(buf[:count])
-
-		fmt.Println("Received: ", count)
-
-		if str == "quit\n" || str == "quit\r\n" {
-			fmt.Println("Quit command received")
-			quitChan <- 1
 		}
 	}
 }
