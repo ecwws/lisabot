@@ -40,8 +40,11 @@ type query struct {
 	Message *messageBlock `json:"message"`
 }
 
+var debugOut bool
+
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
+	flag.BoolVar(&debugOut, "debug", false, "Debug output (true or false)")
 
 	flag.Parse()
 
@@ -109,27 +112,30 @@ func listen(server net.Listener, connChan chan *net.Conn) {
 
 func serve(conn *net.Conn, quitChan chan int) {
 
-	debugReader, debugWriter := io.Pipe()
-	streamIn := io.TeeReader(*conn, debugWriter)
-
-	go monitor(debugReader)
+	var streamIn io.Reader
+	if debugOut {
+		debugReader, debugWriter := io.Pipe()
+		streamIn = io.TeeReader(*conn, debugWriter)
+		go monitorRaw(debugReader)
+	} else {
+		streamIn = *conn
+	}
 
 	decoder := json.NewDecoder(streamIn)
 
-	var block query
+	var q query
 	for {
-		err := decoder.Decode(&block)
+		err := decoder.Decode(&q)
 
 		if err != nil {
 			fmt.Println("Error: ", err)
+		} else {
+			q.process()
 		}
-
-		fmt.Println("Type: ", block.Type)
-		fmt.Println("Source: ", block.Source)
 	}
 }
 
-func monitor(debugReader io.Reader) {
+func monitorRaw(debugReader io.Reader) {
 	buf := make([]byte, 2048)
 
 	for {
