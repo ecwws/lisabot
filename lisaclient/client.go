@@ -1,4 +1,4 @@
-package lisabot
+package lisaclient
 
 import (
 	"crypto/rand"
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type LisabotClient struct {
+type LisaClient struct {
 	raw     net.Conn
 	decoder *json.Decoder
 	encoder *json.Encoder
@@ -34,8 +34,8 @@ type MessageBlock struct {
 type Query struct {
 	Type    string        `json:"type,omitempty"`
 	Source  string        `json:"source,omitempty"`
-	Command *commandBlock `json:"command,omitempty"`
-	Message *messageBlock `json:"message,omitempty"`
+	Command *CommandBlock `json:"command,omitempty"`
+	Message *MessageBlock `json:"message,omitempty"`
 }
 
 func Id() string {
@@ -44,8 +44,8 @@ func Id() string {
 	return fmt.Sprintf("%x", b)
 }
 
-func NewLisabotClient(host, port string) (*LisabotClient, error) {
-	lisabot := new(LisabotClient)
+func NewClient(host, port string) (*LisaClient, error) {
+	lisabot := new(LisaClient)
 
 	conn, err := net.Dial("tcp", host+":"+port)
 
@@ -60,11 +60,11 @@ func NewLisabotClient(host, port string) (*LisabotClient, error) {
 	return lisabot, nil
 }
 
-func (lisa *LisabotClient) Engage() error {
+func (lisa *LisaClient) Engage() error {
 	q := Query{
 		Type:   "command",
 		Source: "lisabot-hipchat",
-		Command: &commandBlock{
+		Command: &CommandBlock{
 			Id:     Id(),
 			Action: "engage",
 			Type:   "adapter",
