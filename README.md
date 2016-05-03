@@ -22,6 +22,22 @@ Adapter engage (A->S)
 }
 ```
 
+Adapter engage response (S->A)
+
+```json
+{
+	"type": "command",
+	"source": "source_identifier",
+	"command": {
+		"id": "identifier",
+		"action": "engage_confirm",
+		"type": "adapter",
+		"time": 1234567,
+		"options": ["to be reserved for future use"]
+	}
+}
+```
+
 Active responder engage (R->S)
 
 ```json

@@ -1,12 +1,20 @@
 package main
 
-import (
-	"fmt"
-)
+type commandBlock struct {
+	Id      string   `json:"id"`
+	Action  string   `json:"action"`
+	Type    string   `json:"type"`
+	Time    int      `json:"time"`
+	Data    string   `json:"data"`
+	Array   []string `json:"array"`
+	Options []string `json:"options"`
+}
 
 func (c *commandBlock) handleCommand(source string) {
-	fmt.Println("Id: ", c.Id)
-	fmt.Println("Action: ", c.Action)
-	fmt.Println("Type: ", c.Type)
-	fmt.Println("Time: ", c.Time)
+	if debugOut {
+		logstd.Println("Id: ", c.Id)
+		logstd.Println("Action: ", c.Action)
+		logstd.Println("Type: ", c.Type)
+		logstd.Println("Time: ", c.Time)
+	}
 }

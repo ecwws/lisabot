@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 )
@@ -17,30 +18,9 @@ type config struct {
 	Secret string `yaml:"secret"`
 }
 
-type commandBlock struct {
-	Id      string   `json:"id"`
-	Action  string   `json:"action"`
-	Type    string   `json:"type"`
-	Time    int      `json:"time"`
-	Data    string   `json:"data"`
-	Array   []string `json:"array"`
-	Options []string `json:"options"`
-}
-
-type messageBlock struct {
-	Message string `json:"message"`
-	From    string `json:"from"`
-	Room    string `json:"room"`
-}
-
-type query struct {
-	Type    string        `json:"type"`
-	Source  string        `json:"source"`
-	Command *commandBlock `json:"command"`
-	Message *messageBlock `json:"message"`
-}
-
 var debugOut bool
+var logerr *log.Logger
+var logstd *log.Logger
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
@@ -48,15 +28,18 @@ func main() {
 
 	flag.Parse()
 
+	logerr = log.New(os.Stderr, "Lisa Error", log.LstdFlags|log.Lshortfile)
+	logstd = log.New(os.Stdout, "Lisa Out", log.LstdFlags|log.Lshortfile)
+
 	if *confFile == "" {
-		fmt.Println("Need to specify a conf file")
+		logerr.Println("Need to specify a conf file")
 		os.Exit(1)
 	}
 
 	confRaw, err := ioutil.ReadFile(*confFile)
 
 	if err != nil {
-		fmt.Println("Error reading config file: ", err)
+		logerr.Println("Error reading config file: ", err)
 		os.Exit(2)
 	}
 
@@ -64,73 +47,86 @@ func main() {
 	err = yaml.Unmarshal(confRaw, &conf)
 
 	if err != nil {
-		fmt.Println("Error parsing config file: ", err)
+		logerr.Println("Error parsing config file: ", err)
 	}
 
 	if conf.Port == 0 {
-		fmt.Println("No port specified!")
+		logerr.Println("No port specified!")
 		os.Exit(3)
 	}
 
-	server, err := net.Listen("tcp", fmt.Sprintf("%s:%d", conf.Ip, conf.Port))
+	serverListener, err :=
+		net.Listen("tcp", fmt.Sprintf("%s:%d", conf.Ip, conf.Port))
 
 	if err != nil {
-		fmt.Println("Error opening socket for listening: ", err)
+		logerr.Println("Error opening socket for listening: ", err)
 		os.Exit(4)
 	}
 
+	server, ok := serverListener.(*net.TCPListener)
+
+	if !ok {
+		logerr.Println("Listner isn't TCP? This is weird...")
+		os.Exit(5)
+	}
+
 	quitChan := make(chan int)
-	connChan := make(chan *net.Conn)
 
-	fmt.Println("Server starting, entering main loop...")
+	dispatcherChan := make(chan *dispatcherRequest)
 
-	go listen(server, connChan)
+	go dispatcher(dispatcherChan, quitChan)
 
-MainLoop:
-	for {
-		select {
-		case conn := <-connChan:
-			fmt.Println("Connection accepted!")
-			go serve(conn, quitChan)
-		case <-quitChan:
-			fmt.Println("Termination requtested")
-			break MainLoop
-		}
-	}
+	logstd.Println("Server starting, entering main loop...")
 
-	fmt.Println("Exited normally")
+	go listen(server, dispatcherChan)
+
+	<-quitChan
+	logstd.Println("Termination requtested")
+
+	logstd.Println("Exited normally")
 }
 
-func listen(server net.Listener, connChan chan *net.Conn) {
+func listen(server *net.TCPListener, dispatcherChan chan *dispatcherRequest) {
+
 	for {
-		conn, err := server.Accept()
+		conn, err := server.AcceptTCP()
 		if err == nil {
-			connChan <- &conn
+			go serve(conn, dispatcherChan)
 		}
 	}
 }
 
-func serve(conn *net.Conn, quitChan chan int) {
+func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 
 	var streamIn io.Reader
 	if debugOut {
 		debugReader, debugWriter := io.Pipe()
-		streamIn = io.TeeReader(*conn, debugWriter)
+		streamIn = io.TeeReader(conn, debugWriter)
 		go monitorRaw(debugReader)
 	} else {
-		streamIn = *conn
+		streamIn = conn
 	}
 
 	decoder := json.NewDecoder(streamIn)
+	encoder := json.NewEncoder(conn)
 
-	var q query
+	var q *query
 	for {
-		err := decoder.Decode(&q)
+		q = new(query)
+		err := decoder.Decode(q)
 
 		if err != nil {
-			fmt.Println("Error: ", err)
+			logerr.Println("Error: ", err)
+			if err.Error() == "EOF" {
+				break
+			}
 		} else {
-			q.process()
+			if q.validate() {
+				dispatcherChan <- &dispatcherRequest{
+					Query:   q,
+					Encoder: encoder,
+				}
+			}
 		}
 	}
 }
@@ -142,11 +138,11 @@ func monitorRaw(debugReader io.Reader) {
 		count, err := debugReader.Read(buf)
 
 		if err == nil {
-			fmt.Println("Debug: ", string(buf[:count]))
+			logstd.Println("Debug: ", string(buf[:count]))
 		} else {
-			fmt.Println("Error: ", err)
+			logerr.Println("Error: ", err)
 			if err.Error() == "EOF" {
-				fmt.Println("EOF detected")
+				logerr.Println("EOF detected")
 				break
 			}
 		}
