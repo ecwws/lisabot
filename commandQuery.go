@@ -11,10 +11,8 @@ type commandBlock struct {
 }
 
 func (c *commandBlock) handleCommand(source string) {
-	if debugOut {
-		logstd.Println("Id: ", c.Id)
-		logstd.Println("Action: ", c.Action)
-		logstd.Println("Type: ", c.Type)
-		logstd.Println("Time: ", c.Time)
-	}
+	logger.Debug.Println("Id: ", c.Id)
+	logger.Debug.Println("Action: ", c.Action)
+	logger.Debug.Println("Type: ", c.Type)
+	logger.Debug.Println("Time: ", c.Time)
 }

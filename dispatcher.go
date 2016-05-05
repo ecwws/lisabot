@@ -8,8 +8,9 @@ import (
 )
 
 type dispatcherRequest struct {
-	Query   *query
-	Encoder *json.Encoder
+	Query      *query
+	Encoder    *json.Encoder
+	EngageResp chan<- string
 }
 
 func generateId() string {
@@ -18,7 +19,7 @@ func generateId() string {
 	return fmt.Sprintf("%x", b)
 }
 
-func dispatcher(request <-chan *dispatcherRequest, quitChan chan int) {
+func dispatcher(request <-chan *dispatcherRequest, quitChan chan bool) {
 	// inspect incoming request
 	// if it's direct respond message, respond directly
 	// if it's targeting specific connection id, patch to that connection
@@ -30,28 +31,46 @@ func dispatcher(request <-chan *dispatcherRequest, quitChan chan int) {
 		req := <-request
 		query := req.Query
 		switch {
-		case query.Type == "command" && query.Command != nil:
+		case query.Type == "command":
 			cmd := query.Command
-			switch {
-			case cmd.Action == "engage" && cmd.Type == "adapter":
+			switch cmd.Action {
+			case "engage":
 				if req.Encoder == nil {
-					logerr.Println("No connection provided for adapter")
+					logger.Error.Println("No connection provided for adapter")
 					panic("Dummy, you forgot to include connection data!")
 				} else {
 					id := query.Source
+
 					if id == "" {
 						id = generateId()
 					}
+
+					for _, ok := connMap[id]; ok; _, ok = connMap[id] {
+						id = generateId()
+					}
+
 					connMap[id] = req.Encoder
+
+					if id != query.Source && query.Source != "" {
+						logger.Warn.Println("Requester's source id already",
+							"taken, assign new source ID: ", query.Source,
+							"-->", id)
+					}
+
+					logger.Info.Println("Engagement accepted: ", id)
+					req.EngageResp <- id
+					close(req.EngageResp)
 				}
+			case "disengage":
+				delete(connMap, query.Source)
+			default:
+				cmd.handleCommand(query.Source)
 			}
-		case query.Type == "message" && query.Message != nil:
+		case query.Type == "message":
 		default:
-			logerr.Println("Malformed ", query.Type, " request, missing ",
-				query.Type, " block. We shouldn't reach here, check your ",
-				"query.validate() code")
+			logger.Error.Println("Unhandlabe message, we shouldn't get here")
 		}
 	}
 
-	quitChan <- 1
+	quitChan <- true
 }
