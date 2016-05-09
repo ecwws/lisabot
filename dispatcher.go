@@ -62,7 +62,10 @@ func dispatcher(request <-chan *dispatcherRequest, quitChan chan bool) {
 					close(req.EngageResp)
 				}
 			case "disengage":
-				delete(connMap, query.Source)
+				if query.Source != "" {
+					delete(connMap, query.Source)
+				}
+				logger.Info.Println("Connection disengaged: ", query.Source)
 			default:
 				cmd.handleCommand(query.Source)
 			}

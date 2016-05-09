@@ -40,17 +40,17 @@ func NewLogger(writer io.Writer, level string) (*lisaLog, error) {
 		fallthrough
 	default:
 		switch {
-		case logger.Debug == nil:
-			logger.Debug = nullLog
-			fallthrough
-		case logger.Info == nil:
-			logger.Info = nullLog
+		case logger.Error == nil:
+			logger.Error = nullLog
 			fallthrough
 		case logger.Warn == nil:
 			logger.Warn = nullLog
 			fallthrough
-		case logger.Error == nil:
-			logger.Error = nullLog
+		case logger.Info == nil:
+			logger.Info = nullLog
+			fallthrough
+		case logger.Debug == nil:
+			logger.Debug = nullLog
 		}
 	}
 

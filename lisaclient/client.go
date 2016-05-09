@@ -74,3 +74,30 @@ func (lisa *LisaClient) Engage() error {
 
 	return lisa.encoder.Encode(&q)
 }
+
+func (lisa *LisaClient) listen(out chan<- *Query) {
+	var q *Query
+	for {
+		q = new(Query)
+		err := lisa.decoder.Decode(q)
+
+		if err != nil {
+			fmt.Println(err)
+			if err.Error() == "EOF" {
+				break
+			}
+		}
+
+		out <- q
+	}
+}
+
+func (lisa *LisaClient) Run(toLisa <-chan *Query, fromLisa chan<- *Query) {
+
+	go lisa.listen(fromLisa)
+	var q *Query
+	for {
+		q = <-toLisa
+		lisa.encoder.Encode(&q)
+	}
+}

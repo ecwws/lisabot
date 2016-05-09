@@ -124,6 +124,15 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 		if err != nil {
 			logger.Error.Println(err)
 			if err.Error() == "EOF" {
+				dispatcherChan <- &dispatcherRequest{
+					Query: &query{
+						Type:   "command",
+						Source: id,
+						Command: &commandBlock{
+							Action: "disengage",
+						},
+					},
+				}
 				break
 			}
 		} else {
