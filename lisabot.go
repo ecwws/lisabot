@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/ecwws/lisabot/logging"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -18,7 +19,7 @@ type config struct {
 	Secret string `yaml:"secret"`
 }
 
-var logger *lisaLog
+var logger *logging.LisaLog
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
@@ -29,7 +30,7 @@ func main() {
 
 	var err error
 
-	logger, err = NewLogger(os.Stdout, *loglevel)
+	logger, err = logging.NewLogger(os.Stdout, *loglevel)
 
 	if err != nil {
 		fmt.Println("Error initializing logger: ", err)

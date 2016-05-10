@@ -1,4 +1,4 @@
-package main
+package logging
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ var logPrefix = [5]string{
 }
 
 // Logger struct is used for error checking and logging
-type lisaLog struct {
+type LisaLog struct {
 	Debug *log.Logger
 	Info  *log.Logger
 	Warn  *log.Logger
@@ -20,9 +20,9 @@ type lisaLog struct {
 	Level string
 }
 
-func NewLogger(writer io.Writer, level string) (*lisaLog, error) {
+func NewLogger(writer io.Writer, level string) (*LisaLog, error) {
 
-	logger := lisaLog{}
+	logger := LisaLog{}
 	nullLog := log.New(ioutil.Discard, "", 0)
 
 	switch level {

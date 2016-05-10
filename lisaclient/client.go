@@ -3,6 +3,7 @@ package lisaclient
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -60,14 +61,18 @@ func NewClient(host, port string) (*LisaClient, error) {
 	return lisabot, nil
 }
 
-func (lisa *LisaClient) Engage() error {
+func (lisa *LisaClient) Engage(clienttype, sourceid string) error {
+	if clienttype != "adapter" && clienttype != "responder" {
+		return errors.New("client type has to be adapter or responder")
+	}
+
 	q := Query{
 		Type:   "command",
-		Source: "lisabot-hipchat",
+		Source: sourceid,
 		Command: &CommandBlock{
 			Id:     Id(),
 			Action: "engage",
-			Type:   "adapter",
+			Type:   clienttype,
 			Time:   time.Now().Unix(),
 		},
 	}
