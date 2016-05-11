@@ -11,9 +11,10 @@ import (
 )
 
 type LisaClient struct {
-	raw     net.Conn
-	decoder *json.Decoder
-	encoder *json.Encoder
+	raw      net.Conn
+	decoder  *json.Decoder
+	encoder  *json.Encoder
+	SourceId string
 }
 
 type CommandBlock struct {
@@ -39,7 +40,7 @@ type Query struct {
 	Message *MessageBlock `json:"message,omitempty"`
 }
 
-func Id() string {
+func RandomId() string {
 	b := make([]byte, 8)
 	io.ReadFull(rand.Reader, b)
 	return fmt.Sprintf("%x", b)
@@ -70,12 +71,14 @@ func (lisa *LisaClient) Engage(clienttype, sourceid string) error {
 		Type:   "command",
 		Source: sourceid,
 		Command: &CommandBlock{
-			Id:     Id(),
+			Id:     RandomId(),
 			Action: "engage",
 			Type:   clienttype,
 			Time:   time.Now().Unix(),
 		},
 	}
+
+	lisa.SourceId = sourceid
 
 	return lisa.encoder.Encode(&q)
 }
