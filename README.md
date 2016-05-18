@@ -5,8 +5,8 @@ written in interpreted language, in my opinion, it's a bit unpractical to write
 a chat bot in go that requires source code modification or re-compilation every
 time you want to add functions to the bot. So I took different approach.
 
-Lisa Bot consistes three different components: Lisa Bot server, Lisa Bot
-Adapter, and Lisa Bot Responder.
+Lisa Bot consistes three different components: *Lisa Bot server*, *Lisa Bot
+Adapter*, and *Lisa Bot Responder*.
 
 In reality, Lisa Bot server is actually just a message dispatcher that
 acts as the middle man for adapters (connect to chat services) and responders
@@ -40,7 +40,7 @@ useful and practical...right?) so I can practice the newly acquired go
 knowledge.
 
 At where I work, we make good use of our chat bot, a Lita bot
-[[https://www.lita.io/]]. I've written quite a few Lita plugins, some
+https://www.lita.io/. I've written quite a few Lita plugins, some
 are custom internal plugins strictly used within the company, some got published
 as open source plugin. Before the Lita bot, we had a hubot, which I too
 contributed to some internal plugins.
@@ -55,7 +55,7 @@ works well most time but once a while certain problem arises that I just with I
 had a bit more freedom in implementing the plugin. Of course, on top of that,
 this model would work well only for bots are written in interpreted
 language--most bot users/admins probably don't want to re-compile the bot every
-time they add a feature/plugin. Thus comes the Server/Client model.
+time they add a feature/plugin. Thus  the Server/Client model is developed.
 
 ## Adapters
 
@@ -64,7 +64,7 @@ services then forward messages to Lisa Bot server, and listen for messages from
 Lisa Bot server and forward them to the chat service.
 
 Currently only one adapter is functional, the HipChat adapter:
-[[https://github.com/ecwws/lisabot-hipchat]]
+https://github.com/ecwws/lisabot-hipchat
 
 Before Lisa Bot can recognize the adapter, adapter has to first "engage" the
 Lisa Bot server. No messages would be forwarded if engagement did not succeed.
@@ -87,7 +87,7 @@ it.
 
 This is a unique feature of Lisa Bot. A passive responder is essentially an
 executable command that is specified in the Lisa Bot's config file what message
-patter would trigger it's execution and how it's executed. Then the output of
+patter would trigger its execution and how it's executed. Then the output of
 the command would be returned to the source adapter that triggered the
 responder.
 
