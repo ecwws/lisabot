@@ -11,15 +11,33 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strings"
 )
 
 type config struct {
-	Port   int    `yaml:"port"`
-	Ip     string `yaml:"ip,omitempty"`
-	Secret string `yaml:"secret"`
+	Port       int             `yaml:"port"`
+	Ip         string          `yaml:"ip,omitempty"`
+	Prefix     string          `yaml:"prefix"`
+	Secret     string          `yaml:"secret"`
+	Responders responderConfig `yaml:"responders"`
+	prefixLen  int
+}
+
+type responderConfig struct {
+	Passive []*passiveResponderConfig `yaml:"passive"`
+}
+
+type passiveResponderConfig struct {
+	Match    string   `yaml:"match"`
+	NoPrefix bool     `yaml:"noprefix"`
+	Cmd      string   `yaml:"cmd"`
+	Args     []string `yaml:"args"`
 }
 
 var logger *logging.LisaLog
+var conf config
+var prefixPResponders []*passiveResponderConfig   // passive
+var noPrefixPResponders []*passiveResponderConfig // passive
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
@@ -34,46 +52,64 @@ func main() {
 
 	if err != nil {
 		fmt.Println("Error initializing logger: ", err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	if *confFile == "" {
-		logger.Error.Println("Need to specify a conf file")
-		os.Exit(1)
+		logger.Error.Fatal("Need to specify a conf file")
 	}
 
 	confRaw, err := ioutil.ReadFile(*confFile)
 
 	if err != nil {
-		logger.Error.Println("Error reading config file: ", err)
-		os.Exit(2)
+		logger.Error.Fatal("Error reading config file: ", err)
 	}
 
-	var conf config
 	err = yaml.Unmarshal(confRaw, &conf)
 
 	if err != nil {
-		logger.Error.Println("Error parsing config file: ", err)
+		logger.Error.Fatal("Error parsing config file: ", err)
+	}
+
+	logger.Debug.Println("Config loaded:", conf)
+
+	prefixPResponders = make([]*passiveResponderConfig, 0)
+	noPrefixPResponders = make([]*passiveResponderConfig, 0)
+
+	for _, pr := range conf.Responders.Passive {
+		logger.Debug.Println("Passive responder:", *pr)
+		if pr.NoPrefix {
+			noPrefixPResponders = append(noPrefixPResponders, pr)
+		} else {
+			prefixPResponders = append(prefixPResponders, pr)
+		}
 	}
 
 	if conf.Port == 0 {
-		logger.Error.Println("No port specified!")
-		os.Exit(3)
+		logger.Error.Fatal("No port specified!")
 	}
+
+	// Prefix need to be free of excess spaces
+	conf.Prefix = strings.Trim(conf.Prefix, " ")
+	if len(conf.Prefix) < 1 {
+		logger.Error.Fatal("Prefix is empty")
+	}
+	conf.Prefix += " "
+	conf.prefixLen = len(conf.Prefix)
 
 	serverListener, err :=
 		net.Listen("tcp", fmt.Sprintf("%s:%d", conf.Ip, conf.Port))
 
 	if err != nil {
 		logger.Error.Println("Error opening socket for listening: ", err)
-		os.Exit(4)
+		os.Exit(5)
 	}
 
 	server, ok := serverListener.(*net.TCPListener)
 
 	if !ok {
 		logger.Error.Println("Listner isn't TCP? This is weird...")
-		os.Exit(5)
+		os.Exit(6)
 	}
 
 	quitChan := make(chan bool)
@@ -146,6 +182,9 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 				}
 			} else {
 				if q.validate() {
+					// ignore the source identifier from the client, we'll
+					// use the identifier returned from engagement
+					q.Source = id
 					dispatcherChan <- &dispatcherRequest{
 						Query:   q,
 						Encoder: encoder,

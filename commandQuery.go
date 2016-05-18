@@ -10,7 +10,9 @@ type commandBlock struct {
 	Options []string `json:"options"`
 }
 
-func (c *commandBlock) handleCommand(source string) {
+func (c *commandBlock) handleCommand(source string,
+	dispatch chan<- *dispatcherRequest) {
+
 	logger.Debug.Println("Id: ", c.Id)
 	logger.Debug.Println("Action: ", c.Action)
 	logger.Debug.Println("Type: ", c.Type)

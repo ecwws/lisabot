@@ -1,25 +1,29 @@
 port: 4517
 secret: abcdefghi
 prefix: lisa
-adapter:
-    hipchat:
-        exec: /vagrant/dev/golang/bin/lisabot-hipchat
-        params:
-            user: "lisa@theevilcat.com"
-            pass: "abcdefg"
-            nick: "Lisa Bot"
-responder:
-    active:
-        echo:
-            exec: /vagrant/dev/golang/bin/lisabot-echo
-            secret_flag: "-screct"
-            args: ["arg1", "arg2", "arg3"]
+adapters:
+  hipchat:
+    exec: /vagrant/dev/golang/bin/lisabot-hipchat
+    params:
+      user: "lisa@theevilcat.com"
+      pass: "abcdefg"
+      nick: "Lisa Bot"
+responders:
+    # active:
+    #   echo:
+    #     exec: /vagrant/dev/golang/bin/lisabot-echo
+    #     secret_flag: "-screct"
+    #     args: ["arg1", "arg2", "arg3"]
     passive:
-        "md5.*":
-            prefix: true
-            trim: true
-            cmd: /usr/bin/md5sum
-            args: ["arg1", "arg2", "arg3"]
-            payload: true
-            fallthrough: true
-            unhandled: true
+    - match: ^ping$
+      noprefix: false
+      cmd: /bin/echo
+      args: ["I am alive, are you?"]
+      # "md5.*":
+      #   prefix: true
+      #   trim: true
+      #   cmd: /usr/bin/md5sum
+      #   args: ["arg1", "arg2", "arg3"]
+      #   payload: true
+      #   fallthrough: true
+      #   unhandled: true

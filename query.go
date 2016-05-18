@@ -1,11 +1,5 @@
 package main
 
-type messageBlock struct {
-	Message string `json:"message"`
-	From    string `json:"from"`
-	Room    string `json:"room"`
-}
-
 type query struct {
 	Type    string        `json:"type"`
 	Source  string        `json:"source"`

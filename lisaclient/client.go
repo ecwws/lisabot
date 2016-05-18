@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ecwws/lisabot/logging"
 	"io"
 	"net"
 	"time"
@@ -15,6 +16,7 @@ type LisaClient struct {
 	decoder  *json.Decoder
 	encoder  *json.Encoder
 	SourceId string
+	Logger   *logging.LisaLog
 }
 
 type CommandBlock struct {
@@ -46,8 +48,12 @@ func RandomId() string {
 	return fmt.Sprintf("%x", b)
 }
 
-func NewClient(host, port string) (*LisaClient, error) {
+func NewClient(host, port string,
+	logger *logging.LisaLog) (*LisaClient, error) {
+
 	lisabot := new(LisaClient)
+
+	lisabot.Logger = logger
 
 	conn, err := net.Dial("tcp", host+":"+port)
 
@@ -92,11 +98,28 @@ func (lisa *LisaClient) listen(out chan<- *Query) {
 		if err != nil {
 			fmt.Println(err)
 			if err.Error() == "EOF" {
+				out <- &Query{
+					Type:   "command",
+					Source: "lisa",
+					Command: &CommandBlock{
+						Action: "disengage",
+					},
+				}
 				break
 			}
 		}
 
-		out <- q
+		if lisa.ValidateQuery(q) {
+			lisa.Logger.Debug.Println("Query received:", *q)
+			if q.Type == "message" {
+				lisa.Logger.Debug.Println("Message:", q.Message.Message)
+				lisa.Logger.Debug.Println("From:", q.Message.From)
+				lisa.Logger.Debug.Println("Room:", q.Message.Room)
+			}
+			out <- q
+		} else {
+			lisa.Logger.Error.Println("Invalid query from server(?!!):", q)
+		}
 	}
 }
 
@@ -106,6 +129,20 @@ func (lisa *LisaClient) Run(toLisa <-chan *Query, fromLisa chan<- *Query) {
 	var q *Query
 	for {
 		q = <-toLisa
-		lisa.encoder.Encode(&q)
+		if lisa.ValidateQuery(q) {
+			lisa.encoder.Encode(q)
+		} else {
+			lisa.Logger.Error.Println("Invalid query:", q)
+		}
 	}
+}
+
+func (lisa *LisaClient) ValidateQuery(q *Query) bool {
+	switch {
+	case q.Type == "command" && q.Command != nil:
+		return true
+	case q.Type == "message" && q.Message != nil && q.Message.Room != "":
+		return true
+	}
+	return false
 }
