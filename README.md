@@ -127,25 +127,7 @@ Adapter engage (A->S)
 	"command": {
 		"id": "identifier",
 		"action": "engage",
-		"type": "adapter",
-		"time": 1234567,
-		"options": ["HMAC encoded source_identifier+time"]
-	}
-}
-```
-
-Adapter engage response (S->A)
-
-```json
-{
-	"type": "command",
-	"source": "source_identifier",
-	"command": {
-		"id": "identifier",
-		"action": "engage_confirm",
-		"type": "adapter",
-		"time": 1234567,
-		"options": ["to be reserved for future use"]
+		"type": "adapter"
 	}
 }
 ```
@@ -159,9 +141,7 @@ Active responder engage (R->S)
 	"command": {
 		"id": "identifier",
 		"action": "engage",
-		"type": "responder",
-		"time": 1234567,
-		"options": ["HMAC encoded source_identifier+time"]
+		"type": "responder"
 	}
 }
 ```
@@ -202,10 +182,28 @@ Message from adapter (A->S)
 {
 	"type": "message",
 	"source": "source_identifier",
+  "to": "server",
 	"message": {
 		"message": "message",
 		"from": "user_identifier",
-		"room": "room_identifier"
+		"room": "room_identifier",
+    "mentioned": boolean
+	}
+}
+```
+
+Message from active responder (R->S)
+
+```json
+{
+	"type": "message",
+	"source": "source_identifier",
+  "to": "dest_identifier",
+	"message": {
+		"message": "message",
+		"from": "user_identifier",
+		"room": "room_identifier",
+    "mentioned": boolean
 	}
 }
 ```

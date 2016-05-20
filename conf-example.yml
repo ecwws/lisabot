@@ -19,6 +19,10 @@ responders:
       noprefix: false
       cmd: /bin/echo
       args: ["I am alive, are you?"]
+    - match: ^.*$
+      noprefix: false
+      cmd: /bin/echo
+      args: ["why?"]
       # "md5.*":
       #   prefix: true
       #   trim: true

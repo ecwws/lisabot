@@ -79,13 +79,13 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			}
 		case q.Type == "message":
 			// message from an adapter won't have a "To" field
-			if q.Message.To != "" {
+			if q.To != "" && q.To != "server" {
 				logger.Debug.Println("Responder message received:", *q.Message)
-				if encoder, ok := connMap[q.Message.To]; ok {
+				if encoder, ok := connMap[q.To]; ok {
 					encoder.Encode(q)
 				} else {
 					logger.Error.Println("Cannot find adapter source for",
-						q.Message.To)
+						q.To)
 				}
 			} else {
 				logger.Debug.Println("Adapter message received:", *q.Message)

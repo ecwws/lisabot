@@ -3,6 +3,7 @@ package main
 type query struct {
 	Type    string        `json:"type"`
 	Source  string        `json:"source"`
+	To      string        `json:"to"`
 	Command *commandBlock `json:"command"`
 	Message *messageBlock `json:"message"`
 }

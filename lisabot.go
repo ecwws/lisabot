@@ -28,10 +28,11 @@ type responderConfig struct {
 }
 
 type passiveResponderConfig struct {
-	Match    string   `yaml:"match"`
-	NoPrefix bool     `yaml:"noprefix"`
-	Cmd      string   `yaml:"cmd"`
-	Args     []string `yaml:"args"`
+	Match       string   `yaml:"match"`
+	NoPrefix    bool     `yaml:"noprefix"`
+	FallThrough bool     `yaml:"fallthrough"`
+	Cmd         string   `yaml:"cmd"`
+	Args        []string `yaml:"args"`
 }
 
 var logger *logging.LisaLog

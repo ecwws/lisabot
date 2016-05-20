@@ -7,10 +7,10 @@ import (
 )
 
 type messageBlock struct {
-	Message string `json:"message"`
-	From    string `json:"from"`
-	Room    string `json:"room"`
-	To      string
+	Message   string `json:"message,omitempty"`
+	From      string `json:"from,omitempty"`
+	Room      string `json:"room,omitempty"`
+	Mentioned bool   `json:"mentioned,omitempty"`
 }
 
 func (m *messageBlock) handleMessage(source string,
@@ -48,13 +48,17 @@ func (m *messageBlock) handleMessage(source string,
 						Query: &query{
 							Type:   "message",
 							Source: "PR:" + pr.Match,
+							To:     source,
 							Message: &messageBlock{
 								Message: strings.TrimRight(string(output), "\n"),
 								Room:    m.Room,
-								To:      source,
 							},
 						},
 					}
+				}
+
+				if !pr.FallThrough {
+					break
 				}
 			}
 		}

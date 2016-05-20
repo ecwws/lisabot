@@ -33,6 +33,7 @@ type MessageBlock struct {
 	Message string `json:"message,omitempty"`
 	From    string `json:"from,omitempty"`
 	Room    string `json:"room,omitempty"`
+	To      string `json:"to,omitempty"`
 }
 
 type Query struct {
