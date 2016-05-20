@@ -30,15 +30,16 @@ type CommandBlock struct {
 }
 
 type MessageBlock struct {
-	Message string `json:"message,omitempty"`
-	From    string `json:"from,omitempty"`
-	Room    string `json:"room,omitempty"`
-	To      string `json:"to,omitempty"`
+	Message   string `json:"message,omitempty"`
+	From      string `json:"from,omitempty"`
+	Room      string `json:"room,omitempty"`
+	Mentioned bool   `json:"mentioned,omitempty"`
 }
 
 type Query struct {
 	Type    string        `json:"type,omitempty"`
 	Source  string        `json:"source,omitempty"`
+	To      string        `json:"to,omitempty"`
 	Command *CommandBlock `json:"command,omitempty"`
 	Message *MessageBlock `json:"message,omitempty"`
 }
