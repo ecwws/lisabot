@@ -12,7 +12,7 @@ var logPrefix = [5]string{
 }
 
 // Logger struct is used for error checking and logging
-type LisaLog struct {
+type PrisLog struct {
 	Debug *log.Logger
 	Info  *log.Logger
 	Warn  *log.Logger
@@ -20,9 +20,9 @@ type LisaLog struct {
 	Level string
 }
 
-func NewLogger(writer io.Writer, level string) (*LisaLog, error) {
+func NewLogger(writer io.Writer, level string) (*PrisLog, error) {
 
-	logger := LisaLog{}
+	logger := PrisLog{}
 	nullLog := log.New(ioutil.Discard, "", 0)
 
 	switch level {

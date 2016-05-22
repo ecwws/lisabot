@@ -1,17 +1,19 @@
 port: 4517
 secret: abcdefghi
-prefix: lisa
+prefix:
+  primary: pris
+  alt: [priscilla $mention cilla]
 adapters:
   hipchat:
-    exec: /vagrant/dev/golang/bin/lisabot-hipchat
+    exec: /vagrant/dev/golang/bin/priscilla-hipchat
     params:
-      user: "lisa@theevilcat.com"
+      user: "priscilla@priscilla.chat"
       pass: "abcdefg"
-      nick: "Lisa Bot"
+      nick: "Priscilla"
 responders:
     # active:
     #   echo:
-    #     exec: /vagrant/dev/golang/bin/lisabot-echo
+    #     exec: /vagrant/dev/golang/bin/pris-echo
     #     secret_flag: "-screct"
     #     args: ["arg1", "arg2", "arg3"]
     passive:

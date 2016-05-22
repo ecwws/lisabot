@@ -1,22 +1,22 @@
-package lisaclient
+package prisclient
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ecwws/lisabot/logging"
+	"github.com/priscillachat/logging"
 	"io"
 	"net"
 	"time"
 )
 
-type LisaClient struct {
+type Client struct {
 	raw      net.Conn
 	decoder  *json.Decoder
 	encoder  *json.Encoder
 	SourceId string
-	Logger   *logging.LisaLog
+	Logger   *logging.PrisLogger
 }
 
 type CommandBlock struct {
@@ -51,26 +51,26 @@ func RandomId() string {
 }
 
 func NewClient(host, port string,
-	logger *logging.LisaLog) (*LisaClient, error) {
+	logger *logging.PrisLog) (*Client, error) {
 
-	lisabot := new(LisaClient)
+	pris := new(Client)
 
-	lisabot.Logger = logger
+	pris.Logger = logger
 
 	conn, err := net.Dial("tcp", host+":"+port)
 
 	if err != nil {
-		return lisabot, err
+		return pris, err
 	}
 
-	lisabot.raw = conn
-	lisabot.decoder = json.NewDecoder(lisabot.raw)
-	lisabot.encoder = json.NewEncoder(lisabot.raw)
+	pris.raw = conn
+	pris.decoder = json.NewDecoder(pris.raw)
+	pris.encoder = json.NewEncoder(pris.raw)
 
-	return lisabot, nil
+	return pris, nil
 }
 
-func (lisa *LisaClient) Engage(clienttype, sourceid string) error {
+func (pris *Client) Engage(clienttype, sourceid string) error {
 	if clienttype != "adapter" && clienttype != "responder" {
 		return errors.New("client type has to be adapter or responder")
 	}
@@ -86,23 +86,23 @@ func (lisa *LisaClient) Engage(clienttype, sourceid string) error {
 		},
 	}
 
-	lisa.SourceId = sourceid
+	pris.SourceId = sourceid
 
-	return lisa.encoder.Encode(&q)
+	return pris.encoder.Encode(&q)
 }
 
-func (lisa *LisaClient) listen(out chan<- *Query) {
+func (pris *Client) listen(out chan<- *Query) {
 	var q *Query
 	for {
 		q = new(Query)
-		err := lisa.decoder.Decode(q)
+		err := pris.decoder.Decode(q)
 
 		if err != nil {
 			fmt.Println(err)
 			if err.Error() == "EOF" {
 				out <- &Query{
 					Type:   "command",
-					Source: "lisa",
+					Source: "pris",
 					Command: &CommandBlock{
 						Action: "disengage",
 					},
@@ -111,35 +111,35 @@ func (lisa *LisaClient) listen(out chan<- *Query) {
 			}
 		}
 
-		if lisa.ValidateQuery(q) {
-			lisa.Logger.Debug.Println("Query received:", *q)
+		if pris.ValidateQuery(q) {
+			pris.Logger.Debug.Println("Query received:", *q)
 			if q.Type == "message" {
-				lisa.Logger.Debug.Println("Message:", q.Message.Message)
-				lisa.Logger.Debug.Println("From:", q.Message.From)
-				lisa.Logger.Debug.Println("Room:", q.Message.Room)
+				pris.Logger.Debug.Println("Message:", q.Message.Message)
+				pris.Logger.Debug.Println("From:", q.Message.From)
+				pris.Logger.Debug.Println("Room:", q.Message.Room)
 			}
 			out <- q
 		} else {
-			lisa.Logger.Error.Println("Invalid query from server(?!!):", q)
+			pris.Logger.Error.Println("Invalid query from server(?!!):", q)
 		}
 	}
 }
 
-func (lisa *LisaClient) Run(toLisa <-chan *Query, fromLisa chan<- *Query) {
+func (pris *Client) Run(toPris <-chan *Query, fromPris chan<- *Query) {
 
-	go lisa.listen(fromLisa)
+	go pris.listen(fromPris)
 	var q *Query
 	for {
-		q = <-toLisa
-		if lisa.ValidateQuery(q) {
-			lisa.encoder.Encode(q)
+		q = <-toPris
+		if pris.ValidateQuery(q) {
+			pris.encoder.Encode(q)
 		} else {
-			lisa.Logger.Error.Println("Invalid query:", q)
+			pris.Logger.Error.Println("Invalid query:", q)
 		}
 	}
 }
 
-func (lisa *LisaClient) ValidateQuery(q *Query) bool {
+func (pris *Client) ValidateQuery(q *Query) bool {
 	switch {
 	case q.Type == "command" && q.Command != nil:
 		return true

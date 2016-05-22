@@ -1,40 +1,40 @@
-# Lisa Bot
+# Priscilla
 
-Lisa Bot is a chat bot written in go. Unlike other popular chat bots, which are
+Priscilla is a chat bot written in go. Unlike other popular chat bots, which are
 written in interpreted language, in my opinion, it's a bit unpractical to write
 a chat bot in go that requires source code modification or re-compilation every
 time you want to add functions to the bot. So I took different approach.
 
-Lisa Bot consistes three different components: *Lisa Bot server*, *Lisa Bot
-Adapter*, and *Lisa Bot Responder*.
+Priscilla consistes three different components: *Priscilla server*, *Priscilla
+Adapter*, and *Priscilla Responder*.
 
-In reality, Lisa Bot server is actually just a message dispatcher that
+In reality, Priscilla server is actually just a message dispatcher that
 acts as the middle man for adapters (connect to chat services) and responders
 (processes messages, performs actions, and respond to messages) to communicate
 with each other. Communication protocol is in JSON over TCP and is described
 later in the document.
 
-One unique feature about Lisa Bot is that because it communicates with other
-components via JSON over TCP, there isn't any requirement that Lisa Bot's
-plugin has to be written in go. Any program/process that can speak Lisa Bot's
+One unique feature about Priscilla is that because it communicates with other
+components via JSON over TCP, there isn't any requirement that Priscilla's
+plugin has to be written in go. Any program/process that can speak Priscilla's
 communication protocol can act as an adapter or responder. In fact, there's an
 entire subclass of responders called passive responder, does not even require
-the responder to speak Lisa Bot's protocol at all. They are literally commands
-Lisa Bot server would execute on the fly upon deteting a matching pattern from
+the responder to speak Priscilla's protocol at all. They are literally commands
+Priscilla server would execute on the fly upon deteting a matching pattern from
 the incoming message from an adapter and return the output back to the origin
 adapter. That's why there isn't an internal "ping" command, instead, you would
 just simply implement it as a passive responder using unix "echo" command.
 
-Another unique feature about Lisa Bot, is that since Lisa Bot does not really
+Another unique feature about Priscilla, is that since Priscilla does not really
 distinguish the connections trying to engage with her (yay, pun), there is no
-limit on how many adapters can be active with a single Lisa Bot server at the
-same time. You can have both HipChat and Slack connect to the same Lisa Bot
+limit on how many adapters can be active with a single Priscilla server at the
+same time. You can have both HipChat and Slack connect to the same Priscilla
 server the same time, or connect multiple HipChat/Slack organizations through
-multiple adapters that all connects to the same Lisa Server.
+multiple adapters that all connects to the same Priscilla Server.
 
 ## About
 
-Lisa Bot is a chat bot written purely in go. It all started when I started
+Priscilla is a chat bot written purely in go. It all started when I started
 learning go and wanted to do something useful and practical (um...chat bot is
 useful and practical...right?) so I can practice the newly acquired go
 knowledge.
@@ -59,15 +59,15 @@ time they add a feature/plugin. Thus  the Server/Client model is developed.
 
 ## Adapters
 
-Adapters are long running Lisa Bot clients that connects and listens on the chat
-services then forward messages to Lisa Bot server, and listen for messages from
-Lisa Bot server and forward them to the chat service.
+Adapters are long running Priscilla clients that connects and listens on the chat
+services then forward messages to Priscilla server, and listen for messages from
+Priscilla server and forward them to the chat service.
 
 Currently only one adapter is functional, the HipChat adapter:
-https://github.com/ecwws/lisabot-hipchat
+https://github.com/priscillachat/priscilla-hipchat
 
-Before Lisa Bot can recognize the adapter, adapter has to first "engage" the
-Lisa Bot server. No messages would be forwarded if engagement did not succeed.
+Before Priscilla can recognize the adapter, adapter has to first "engage" the
+Priscilla server. No messages would be forwarded if engagement did not succeed.
 
 ## Responders
 
@@ -78,27 +78,27 @@ responder and passive responder.
 ### Active Responder
 
 Like adapter, active responder is a long running process that listens for
-requests form Lisa Bot server. And like adapter, active responder has to first
-engage the Lisa Bot server. Then active responder would perform pattern
-registration, where it tells Lisa Bot server what message should be forwarded to
+requests form Priscilla server. And like adapter, active responder has to first
+engage the Priscilla server. Then active responder would perform pattern
+registration, where it tells Priscilla server what message should be forwarded to
 it.
 
 ### Passive Responder
 
-This is a unique feature of Lisa Bot. A passive responder is essentially an
-executable command that is specified in the Lisa Bot's config file what message
+This is a unique feature of Priscilla. A passive responder is essentially an
+executable command that is specified in the Priscilla's config file what message
 patter would trigger its execution and how it's executed. Then the output of
 the command would be returned to the source adapter that triggered the
 responder.
 
-This is a powerful feature that makes both implementing and testing Lisa Bot
+This is a powerful feature that makes both implementing and testing Priscilla
 responders easy. You can literally write a single executable command that takes
-input and produces output, and test it all without the need to have Lisa Bot
-being present at all. When time comes to connect the responder to Lisa Bot, you
+input and produces output, and test it all without the need to have Priscilla
+being present at all. When time comes to connect the responder to Priscilla, you
 only have to specify in the config file how you want the command invoked.
 
 For example, this is how you would implement a "ping" passive responder using
-unix "echo" command, simply put in your Lisa Bot config file:
+unix "echo" command, simply put in your Priscilla config file:
 
 ```yaml
 responders:
@@ -116,7 +116,7 @@ at all! Imagine that.
 
 * (A) Adapter
 * (R) Responder
-* (S) Lisa Bot Main Server
+* (S) Priscilla Main Server
 
 Adapter engage (A->S)
 

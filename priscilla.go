@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/ecwws/lisabot/logging"
+	"github.com/priscillachat/logging"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -35,7 +35,7 @@ type passiveResponderConfig struct {
 	Args        []string `yaml:"args"`
 }
 
-var logger *logging.LisaLog
+var logger *logging.PrisLog
 var conf config
 var prefixPResponders []*passiveResponderConfig   // passive
 var noPrefixPResponders []*passiveResponderConfig // passive
