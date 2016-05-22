@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/priscillachat/logging"
+	"github.com/priscillachat/prislog"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -35,7 +35,7 @@ type passiveResponderConfig struct {
 	Args        []string `yaml:"args"`
 }
 
-var logger *logging.PrisLog
+var logger *prislog.PrisLog
 var conf config
 var prefixPResponders []*passiveResponderConfig   // passive
 var noPrefixPResponders []*passiveResponderConfig // passive
@@ -49,7 +49,7 @@ func main() {
 
 	var err error
 
-	logger, err = logging.NewLogger(os.Stdout, *loglevel)
+	logger, err = prislog.NewLogger(os.Stdout, *loglevel)
 
 	if err != nil {
 		fmt.Println("Error initializing logger: ", err)
