@@ -1,8 +1,7 @@
 port: 4517
 secret: abcdefghi
-prefix:
-  primary: pris
-  alt: [priscilla $mention cilla]
+prefix: pris
+prefix-alt: [priscilla $mention cilla]
 adapters:
   hipchat:
     exec: /vagrant/dev/golang/bin/priscilla-hipchat
@@ -17,14 +16,29 @@ responders:
     #     secret_flag: "-screct"
     #     args: ["arg1", "arg2", "arg3"]
     passive:
-    - match: ^ping$
+    - name: echo
+      match: ^say (.+)$
       noprefix: false
+      type: simple
       cmd: /bin/echo
-      args: ["I am alive, are you?"]
-    - match: ^.*$
+      args: ["__0__, are you satisfied?"]
+    - name: cleverbot
+      multimatch:
+      - ^(.*), pris$
+      - ^(.*), pris\?$
       noprefix: false
-      cmd: /bin/echo
-      args: ["why?"]
+      type: compound
+      cmds:
+      - cmd: /usr/bin/curl
+        args:
+        - "-X"
+        - "POST"
+        - "-H"
+        - "Content-Type: application/json"
+        - "-d"
+        - '{"user": "user", "key": "key", "nick": "priscilla", "text": "_0_"}'
+      - cmd: /usr/local/bin/jq
+        args: [".response"]
       # "md5.*":
       #   prefix: true
       #   trim: true
