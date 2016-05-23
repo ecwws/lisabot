@@ -5,11 +5,12 @@ import (
 )
 
 type messageBlock struct {
-	Message   string `json:"message,omitempty"`
-	From      string `json:"from,omitempty"`
-	Room      string `json:"room,omitempty"`
-	Mentioned bool   `json:"mentioned,omitempty"`
-	Stripped  string `json:"stripped,omitempty"`
+	Message       string   `json:"message,omitempty"`
+	From          string   `json:"from,omitempty"`
+	Room          string   `json:"room,omitempty"`
+	Mentioned     bool     `json:"mentioned,omitempty"`
+	Stripped      string   `json:"stripped,omitempty"`
+	MentionNotify []string `json:"mentionnotify,omitempty"`
 }
 
 func (m *messageBlock) handleMessage(source string,
@@ -31,10 +32,15 @@ func (m *messageBlock) handleMessage(source string,
 		logger.Debug.Println("Prefix matched!")
 		trimmed := strings.TrimLeft(m.Message[conf.prefixLen:], " ")
 		triggerPassiveResponders(prefixPResponders, trimmed, source, m.Room,
-			m.Stripped, m.Mentioned, dispatch)
+			m.From, false, dispatch)
 	} else {
-		logger.Debug.Println("No prefix match triggered!")
-		triggerPassiveResponders(noPrefixPResponders, m.Message, source, m.Room,
-			m.Stripped, m.Mentioned, dispatch)
+		logger.Debug.Println("Non-prefix match triggered!")
+		matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
+			source, m.Room, m.From, false, dispatch)
+		if !matched && m.Mentioned {
+			logger.Debug.Println("Mention match triggered!")
+			triggerPassiveResponders(mentionPResponders, m.Stripped, source,
+				m.Room, m.From, true, dispatch)
+		}
 	}
 }

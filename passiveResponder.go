@@ -2,20 +2,31 @@ package main
 
 import (
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-func triggerPassiveResponders(responders []*passiveResponderConfig, trimmed,
-	source, room, stripped string, mentioned bool,
-	dispatch chan<- *dispatcherRequest) {
+func triggerPassiveResponders(responders []*passiveResponderConfig, message,
+	source, room, from string, mentionMode bool,
+	dispatch chan<- *dispatcherRequest) (matched bool) {
 
 ResponderLoop:
 	for _, pr := range responders {
-		for _, rg := range pr.regex {
-			logger.Debug.Println("Trying to match:", pr.Name)
+		var patterns []*regexp.Regexp
+		if mentionMode {
+			logger.Debug.Println("Using mention pattern")
+			patterns = pr.mRegex
+		} else {
+			logger.Debug.Println("Using regular pattern")
+			patterns = pr.regex
+		}
 
-			matches := rg.FindAllStringSubmatch(trimmed, 1)
+		for _, rg := range patterns {
+			logger.Debug.Println("Trying to match:", pr.Name)
+			logger.Debug.Println("Pattern:", *rg)
+
+			matches := rg.FindAllStringSubmatch(message, 1)
 			if len(matches) == 0 {
 				continue
 			}
@@ -25,7 +36,6 @@ ResponderLoop:
 
 			var output []byte
 			var err error
-			respond := false
 
 			var subArgs []string
 			subbed := false
@@ -60,29 +70,36 @@ ResponderLoop:
 			} else {
 				output, err = exec.Command(pr.Cmd, pr.Args...).Output()
 			}
-			respond = true
+			matched = true
 
 			if err != nil {
 				logger.Error.Println("Passive responder error:", err)
-			} else if respond {
+			} else {
 				logger.Debug.Println("Passive responder executed:",
 					string(output))
 
-				dispatch <- &dispatcherRequest{
+				request := dispatcherRequest{
 					Query: &query{
 						Type:   "message",
 						Source: "Passive Responder: " + pr.Name,
 						To:     source,
 						Message: &messageBlock{
-							Message: strings.TrimRight(string(output), "\n"),
+							Message: strings.Trim(string(output), " \n"),
 							Room:    room,
 						},
 					},
 				}
+
+				if mentionMode {
+					request.Query.Message.MentionNotify = []string{from}
+				}
+
+				dispatch <- &request
 			}
 
 			// one regex in the match is good, continue onto next responder
 			continue ResponderLoop
 		}
 	}
+	return
 }

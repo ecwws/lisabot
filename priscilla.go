@@ -38,6 +38,7 @@ type passiveResponderConfig struct {
 	Cmd          string   `yaml:"cmd"`
 	Args         []string `yaml:"args"`
 	regex        []*regexp.Regexp
+	mRegex       []*regexp.Regexp
 	substitute   map[int]bool
 }
 
@@ -45,6 +46,7 @@ var logger *prislog.PrisLog
 var conf config
 var prefixPResponders []*passiveResponderConfig   // passive
 var noPrefixPResponders []*passiveResponderConfig // passive
+var mentionPResponders []*passiveResponderConfig  // passive
 var subRegex *regexp.Regexp
 
 func main() {
@@ -83,6 +85,7 @@ func main() {
 
 	prefixPResponders = make([]*passiveResponderConfig, 0)
 	noPrefixPResponders = make([]*passiveResponderConfig, 0)
+	mentionPResponders = make([]*passiveResponderConfig, 0)
 
 	subRegex = regexp.MustCompile("__([[:digit:]])__")
 
@@ -95,14 +98,21 @@ func main() {
 		}
 
 		pr.regex = make([]*regexp.Regexp, 0)
-
 		for _, pattern := range pr.Match {
 			rg, err := regexp.Compile(pattern)
 			if err != nil {
-				logger.Error.Fatal("Unable to parse match expression:", pattern)
+				logger.Error.Fatal("Unable to parse expression:", pattern)
 			}
 			pr.regex = append(pr.regex, rg)
+		}
 
+		pr.mRegex = make([]*regexp.Regexp, 0)
+		for _, pattern := range pr.MentionMatch {
+			rg, err := regexp.Compile(pattern)
+			if err != nil {
+				logger.Error.Fatal("Unable to parse expression:", pattern)
+			}
+			pr.mRegex = append(pr.mRegex, rg)
 		}
 
 		if len(pr.regex) == 0 {
@@ -122,11 +132,16 @@ func main() {
 		}
 
 		if pr.NoPrefix {
-			logger.Debug.Println("NoPrefix responder:", pr.Name)
+			logger.Debug.Println("Registered NoPrefix responder:", pr.Name)
 			noPrefixPResponders = append(noPrefixPResponders, pr)
 		} else {
-			logger.Debug.Println("Prefix responder:", pr.Name)
+			logger.Debug.Println("Registered Prefix responder:", pr.Name)
 			prefixPResponders = append(prefixPResponders, pr)
+		}
+
+		if len(pr.mRegex) != 0 {
+			logger.Debug.Println("Registered Mention responder:", pr.Name)
+			mentionPResponders = append(mentionPResponders, pr)
 		}
 	}
 
