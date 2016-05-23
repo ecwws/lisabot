@@ -81,18 +81,18 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			// message from an adapter won't have a "To" field
 			if q.To != "" && q.To != "server" {
 				logger.Debug.Println("Responder message received:", *q.Message)
+				logger.Debug.Println("Query source:", q.Source)
 				if encoder, ok := connMap[q.To]; ok {
 					encoder.Encode(q)
 				} else {
-					logger.Error.Println("Cannot find adapter source for",
-						q.To)
+					logger.Error.Println("Cannot find adapter source for", q.To)
 				}
 			} else {
 				logger.Debug.Println("Adapter message received:", *q.Message)
 				go q.Message.handleMessage(q.Source, request)
 			}
 		default:
-			logger.Error.Println("Unhandlabe message, we shouldn't get here")
+			logger.Error.Println("Unhandlabe message, bad client code")
 		}
 	}
 
