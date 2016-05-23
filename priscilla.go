@@ -30,23 +30,15 @@ type responderConfig struct {
 }
 
 type passiveResponderConfig struct {
-	Name        string             `yaml:"name"`
-	Match       string             `yaml:"match"`
-	MultiMatch  []string           `yaml:"multimatch"`
-	NoPrefix    bool               `yaml:"noprefix"`
-	FallThrough bool               `yaml:"fallthrough"`
-	Type        string             `yaml:"type"`
-	Cmd         string             `yaml:"cmd"`
-	Args        []string           `yaml:"args"`
-	Cmds        []*compoundCommand `yaml:"cmds"`
-	regex       []*regexp.Regexp
-	substitute  map[int]bool
-}
-
-type compoundCommand struct {
-	Cmd        string   `yaml:"cmd"`
-	Args       []string `yaml:"args"`
-	substitute map[int]bool
+	Name         string   `yaml:"name"`
+	Match        []string `yaml:"match"`
+	MentionMatch []string `yaml:"mentionmatch"`
+	NoPrefix     bool     `yaml:"noprefix"`
+	FallThrough  bool     `yaml:"fallthrough"`
+	Cmd          string   `yaml:"cmd"`
+	Args         []string `yaml:"args"`
+	regex        []*regexp.Regexp
+	substitute   map[int]bool
 }
 
 var logger *prislog.PrisLog
@@ -92,74 +84,51 @@ func main() {
 	prefixPResponders = make([]*passiveResponderConfig, 0)
 	noPrefixPResponders = make([]*passiveResponderConfig, 0)
 
+	subRegex = regexp.MustCompile("__([[:digit:]])__")
+
 	for _, pr := range conf.Responders.Passive {
 		logger.Debug.Println("Passive responder:", *pr)
 
-		if pr.Match == "" && len(pr.MultiMatch) == 0 {
+		if len(pr.Match) == 0 {
 			logger.Error.Fatal(
-				"Must specify either match or multimatch for passive responder")
+				"Must specify at least one match for passive responder")
 		}
 
 		pr.regex = make([]*regexp.Regexp, 0)
 
-		if pr.Match != "" {
-			rg, err := regexp.Compile(pr.Match)
+		for _, pattern := range pr.Match {
+			rg, err := regexp.Compile(pattern)
 			if err != nil {
-				logger.Error.Fatal("Unable to parse match expression:", pr.Match)
+				logger.Error.Fatal("Unable to parse match expression:", pattern)
 			}
 			pr.regex = append(pr.regex, rg)
-		}
 
-		if len(pr.MultiMatch) > 0 {
-			for _, pattern := range pr.MultiMatch {
-				rg, err := regexp.Compile(pattern)
-				if err != nil {
-					logger.Error.Fatal("Unable to parse match expression:",
-						pattern)
-				}
-				pr.regex = append(pr.regex, rg)
-
-			}
 		}
 
 		if len(pr.regex) == 0 {
 			logger.Error.Fatal("Missing match or multimatch:", pr.Name)
 		}
 
-		switch pr.Type {
-		case "simple":
-			if pr.Cmd == "" {
-				logger.Error.Fatal(
-					"Responder of simple type must have 'cmd' paramenter")
-			}
-			pr.substitute = make(map[int]bool)
-			for i, arg := range pr.Args {
-				if ms, _ := regexp.MatchString("__[[:digit:]]__", arg); ms {
-					pr.substitute[i] = true
-				}
-			}
-		case "compound":
-			if len(pr.Cmds) == 0 {
-				logger.Error.Fatal(
-					"Responder of compound type must have 'cmds' parameter")
-			}
-			for _, cmd := range pr.Cmds {
-				for i, arg := range cmd.Args {
-					if ms, _ := regexp.MatchString("__[[:digit:]]__", arg); ms {
-						cmd.substitute[i] = true
-					}
-				}
+		if pr.Cmd == "" {
+			logger.Error.Fatal(
+				"Passive Responder must have 'cmd' paramenter")
+		}
+
+		pr.substitute = make(map[int]bool)
+		for i, arg := range pr.Args {
+			if ms := subRegex.MatchString(arg); ms {
+				pr.substitute[i] = true
 			}
 		}
 
 		if pr.NoPrefix {
+			logger.Debug.Println("NoPrefix responder:", pr.Name)
 			noPrefixPResponders = append(noPrefixPResponders, pr)
 		} else {
+			logger.Debug.Println("Prefix responder:", pr.Name)
 			prefixPResponders = append(prefixPResponders, pr)
 		}
 	}
-
-	subRegex = regexp.MustCompile("__([[:digit:]])__")
 
 	if conf.Port == 0 {
 		logger.Error.Fatal("No port specified!")

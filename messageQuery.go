@@ -9,7 +9,7 @@ type messageBlock struct {
 	From      string `json:"from,omitempty"`
 	Room      string `json:"room,omitempty"`
 	Mentioned bool   `json:"mentioned,omitempty"`
-	Mention   string `json:"mention,omitempty"`
+	Stripped  string `json:"stripped,omitempty"`
 }
 
 func (m *messageBlock) handleMessage(source string,
@@ -28,11 +28,13 @@ func (m *messageBlock) handleMessage(source string,
 	}
 
 	if prefixMatch {
+		logger.Debug.Println("Prefix matched!")
 		trimmed := strings.TrimLeft(m.Message[conf.prefixLen:], " ")
 		triggerPassiveResponders(prefixPResponders, trimmed, source, m.Room,
-			m.Mention, m.Mentioned, dispatch)
+			m.Stripped, m.Mentioned, dispatch)
 	} else {
+		logger.Debug.Println("No prefix match triggered!")
 		triggerPassiveResponders(noPrefixPResponders, m.Message, source, m.Room,
-			m.Mention, m.Mentioned, dispatch)
+			m.Stripped, m.Mentioned, dispatch)
 	}
 }
