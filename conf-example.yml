@@ -18,10 +18,10 @@ responders:
     passive:
     - name: echo
       match:
-      - ^say (.+)$
+      - ^ping$
       noprefix: false
       cmd: /bin/echo
-      args: ["__0__, are you satisfied?"]
+      args: ["pong"]
     - name: cleverbot
       match:
       - ^(.*), pris$
