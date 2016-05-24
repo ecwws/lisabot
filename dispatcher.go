@@ -31,8 +31,9 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 		req := <-request
 		q := req.Query
 
-		if !q.validate() {
-			logger.Error.Println("Invalid query received:", q)
+		if err := q.validate(); err != nil {
+			logger.Error.Println("Query failed to validate:", err)
+			logger.Info.Println("Invalid query received:", q)
 			continue
 		}
 
@@ -42,8 +43,8 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			switch cmd.Action {
 			case "engage":
 				if req.Encoder == nil {
-					logger.Error.Println("No connection provided for adapter")
-					panic("Dummy, you forgot to include connection data!")
+					logger.Error.Println("No connection provided for engagement")
+					logger.Error.Fatal("Bad code, check code ininitialize()")
 				} else {
 					id := q.Source
 
@@ -53,6 +54,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 					}
 
 					// source identifier collision, use a random source id
+					// and keep generating until no collision is found
 					for _, ok := connMap[id]; ok; _, ok = connMap[id] {
 						id = generateId()
 					}

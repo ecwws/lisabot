@@ -214,6 +214,7 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 
 	var q *query
 	id := ""
+	isAdapter := false
 	for {
 		q = new(query)
 		err := decoder.Decode(q)
@@ -240,15 +241,24 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 					conn.Close()
 					break
 				}
+				isAdapter = true
 			} else {
-				if q.validate() {
+				if err := q.validate(); err == nil {
 					// ignore the source identifier from the client, we'll
 					// use the identifier returned from engagement
 					q.Source = id
+
+					// if message is from adapter, ignore the value of the "to"
+					// field, it should always be empty or "server"
+					if isAdapter {
+						q.To = ""
+					}
 					dispatcherChan <- &dispatcherRequest{
 						Query:   q,
 						Encoder: encoder,
 					}
+				} else {
+					logger.Error.Println("Failed to validate query:", err)
 				}
 			}
 		}
@@ -258,8 +268,8 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 func initialize(q *query, encoder *json.Encoder,
 	dispatcherChan chan *dispatcherRequest) (string, error) {
 
-	if !q.validate() {
-		return "", errors.New("Bad engagement request")
+	if err := q.checkEngagement(); err != nil {
+		return "", err
 	}
 
 	resp := make(chan string)

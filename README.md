@@ -22,6 +22,10 @@ development stage and may change without notice until code base is stable.
 
 ### Priscilla Adapter
 
+Adapters are long running Priscilla clients that connects and listens on the chat
+services then forward messages to Priscilla server, and listen for messages from
+Priscilla server and forward them back to the chat service.
+
 An unique feature about Priscilla, is that since Priscilla does not really
 distinguish the connections trying to engage with her (yay, pun), and a new
 unique source ID is assigned to an engaged adapter, there is no limit on how
@@ -30,10 +34,6 @@ effectively have both HipChat, Slack, IRC, as well as a local shell test console
 all connect to the same Priscilla server the same time, or connect multiple
 HipChat/Slack/IRC organizations through multiple copies of the same adapters
 to the same Priscilla Server.
-
-Adapters are long running Priscilla clients that connects and listens on the chat
-services then forward messages to Priscilla server, and listen for messages from
-Priscilla server and forward them back to the chat service.
 
 Currently only one adapter is functional, the HipChat adapter:
 https://github.com/priscillachat/priscilla-hipchat
