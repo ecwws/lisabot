@@ -6,7 +6,7 @@ a chat bot in go the same way because it'll requires source code modification
 and re-compilation every time you want to add functionalities to the bot. So I
 took a bit different approach.
 
-## Architecture: Server-Adapter-Responder Model
+## Server-Adapter-Responder Model
 
 Priscilla is made of three components: **Priscilla server**, **Priscilla
 Adapter**, and **Priscilla Responder**.
