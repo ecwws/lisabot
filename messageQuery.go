@@ -31,16 +31,21 @@ func (m *messageBlock) handleMessage(source string,
 	if prefixMatch {
 		logger.Debug.Println("Prefix matched!")
 		trimmed := strings.TrimLeft(m.Message[conf.prefixLen:], " ")
-		triggerPassiveResponders(prefixPResponders, trimmed, source, m.Room,
-			m.From, false, dispatch)
+
+		if !checkHelp(trimmed, source, m.Room, dispatch) {
+			triggerPassiveResponders(prefixPResponders, trimmed, source, m.Room,
+				m.From, false, dispatch)
+		}
 	} else {
 		logger.Debug.Println("Non-prefix match triggered!")
-		matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
-			source, m.Room, m.From, false, dispatch)
-		if !matched && m.Mentioned {
-			logger.Debug.Println("Mention match triggered!")
-			triggerPassiveResponders(mentionPResponders, m.Stripped, source,
-				m.Room, m.From, true, dispatch)
+		if !checkHelp(m.Message, source, m.Room, dispatch) {
+			matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
+				source, m.Room, m.From, false, dispatch)
+			if !matched && m.Mentioned {
+				logger.Debug.Println("Mention match triggered!")
+				triggerPassiveResponders(mentionPResponders, m.Stripped, source,
+					m.Room, m.From, true, dispatch)
+			}
 		}
 	}
 }

@@ -20,9 +20,11 @@ type config struct {
 	Ip         string           `yaml:"ip,omitempty"`
 	Prefix     string           `yaml:"prefix"`
 	PrefixAlt  []string         `yaml:"prefix-alit"`
+	Help       string           `yaml:"help-command"`
 	Secret     string           `yaml:"secret"`
 	Responders *responderConfig `yaml:"responders"`
 	prefixLen  int
+	helpRegex  *regexp.Regexp
 }
 
 type responderConfig struct {
@@ -30,16 +32,18 @@ type responderConfig struct {
 }
 
 type passiveResponderConfig struct {
-	Name         string   `yaml:"name"`
-	Match        []string `yaml:"match"`
-	MentionMatch []string `yaml:"mentionmatch"`
-	NoPrefix     bool     `yaml:"noprefix"`
-	FallThrough  bool     `yaml:"fallthrough"`
-	Cmd          string   `yaml:"cmd"`
-	Args         []string `yaml:"args"`
-	regex        []*regexp.Regexp
-	mRegex       []*regexp.Regexp
-	substitute   map[int]bool
+	Name           string   `yaml:"name"`
+	Match          []string `yaml:"match"`
+	MentionMatch   []string `yaml:"mentionmatch"`
+	NoPrefix       bool     `yaml:"noprefix"`
+	FallThrough    bool     `yaml:"fallthrough"`
+	Cmd            string   `yaml:"cmd"`
+	Args           []string `yaml:"args"`
+	HelpSimple     string   `yaml:"help"`
+	HelpSimpleCmds []string `yaml:"help-commands"`
+	regex          []*regexp.Regexp
+	mRegex         []*regexp.Regexp
+	substitute     map[int]bool
 }
 
 var logger *prislog.PrisLog
@@ -48,6 +52,7 @@ var prefixPResponders []*passiveResponderConfig   // passive
 var noPrefixPResponders []*passiveResponderConfig // passive
 var mentionPResponders []*passiveResponderConfig  // passive
 var subRegex *regexp.Regexp
+var help map[string]string
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
@@ -81,6 +86,18 @@ func main() {
 		logger.Error.Fatal("Error parsing config file: ", err)
 	}
 
+	if conf.Help == "" {
+		conf.Help = "help"
+	}
+
+	conf.helpRegex, err = regexp.Compile("^" + conf.Help + "\\s*(\\w)*")
+
+	if err != nil {
+		logger.Error.Fatal("Bad help command:", err)
+	}
+
+	logger.Debug.Println("Help command:", conf.helpRegex)
+
 	logger.Debug.Println("Config loaded:", conf)
 
 	prefixPResponders = make([]*passiveResponderConfig, 0)
@@ -88,6 +105,8 @@ func main() {
 	mentionPResponders = make([]*passiveResponderConfig, 0)
 
 	subRegex = regexp.MustCompile("__([[:digit:]])__")
+
+	help = make(map[string]string)
 
 	for _, pr := range conf.Responders.Passive {
 		logger.Debug.Println("Passive responder:", *pr)
@@ -142,6 +161,15 @@ func main() {
 		if len(pr.mRegex) != 0 {
 			logger.Debug.Println("Registered Mention responder:", pr.Name)
 			mentionPResponders = append(mentionPResponders, pr)
+		}
+
+		if pr.HelpSimple == "" || len(pr.HelpSimpleCmds) == 0 {
+			logger.Error.Fatal(
+				"Missing help or help-commands for passive responder: ",
+				pr.Name)
+		}
+		for _, cmd := range pr.HelpSimpleCmds {
+			help[cmd] = pr.HelpSimple
 		}
 	}
 

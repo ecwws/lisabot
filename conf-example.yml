@@ -1,7 +1,9 @@
 port: 4517
 secret: abcdefghi
 prefix: pris
+name: Priscilla
 prefix-alt: [priscilla $mention cilla]
+help-command: help  # default value
 adapters:
   hipchat:
     exec: /vagrant/dev/golang/bin/priscilla-hipchat
@@ -22,6 +24,8 @@ responders:
       noprefix: false
       cmd: /bin/echo
       args: ["pong"]
+      help: "see if bot is listening"
+      help-commands: ["ping"]
     - name: cleverbot
       match:
       - ^(.*), pris$
@@ -31,6 +35,8 @@ responders:
       noprefix: true
       cmd: ~/dev/priscilla-scripts/cleverbot.sh
       args: ["__0__"]
+      help: "let bot answer your question"
+      help-commands: ['..., pris', '..., pris?', '"@mention in the msg"']
       # "md5.*":
       #   prefix: true
       #   trim: true
