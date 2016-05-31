@@ -6,7 +6,7 @@ import (
 )
 
 func checkHelp(msg, source, room string, dp chan<- *dispatcherRequest) bool {
-	logger.Debug.Println("Checking help command...")
+	logger.Debug.Println("Checking help command:", msg)
 
 	matches := conf.helpRegex.FindAllStringSubmatch(msg, 1)
 

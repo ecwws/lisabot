@@ -38,12 +38,14 @@ func (m *messageBlock) handleMessage(source string,
 		}
 	} else {
 		logger.Debug.Println("Non-prefix match triggered!")
-		if !checkHelp(m.Message, source, m.Room, dispatch) {
-			matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
-				source, m.Room, m.From, false, dispatch)
-			if !matched && m.Mentioned {
+		matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
+			source, m.Room, m.From, false, dispatch)
+		if !matched && m.Mentioned {
+			trimmed := strings.TrimLeft(m.Stripped, " ")
+
+			if !checkHelp(trimmed, source, m.Room, dispatch) {
 				logger.Debug.Println("Mention match triggered!")
-				triggerPassiveResponders(mentionPResponders, m.Stripped, source,
+				triggerPassiveResponders(mentionPResponders, trimmed, source,
 					m.Room, m.From, true, dispatch)
 			}
 		}
