@@ -243,12 +243,59 @@ long as the communication protocol stays the same).
 ```
 
 **Note**
+
 Other than the "type" field, adapter and responder engagement messages are
-identical. Priscilla server treats adapter and responder differently. Messages
-from Adapters, the "to" field is ignored as they will always go through the
-pattern matching routine in the dispatcher. Messages from responder on the other
-hand, would never go through a pattern matching routine and would be sent
-directly to the "to" indicated source.
+identical. However, Priscilla server treats adapter and responder differently.
+Messages from Adapters, if a "to" field is ever set, it will be ignored as they
+will always go through the pattern matching routine in the dispatcher. Messages
+from responder on the other hand, would never go through a pattern matching
+routine and would be sent directly to the "to" indicated source.
+
+### Engagement success response (S->A, S->R)
+
+```json
+{
+	"type": "command",
+	"source": "server",
+	"command": {
+		"id": "identifier",
+		"action": "proceed",
+		"data": "source_identifier",
+	}
+}
+```
+
+### Engagement failure response (S->A, S->R)
+
+```json
+{
+	"type": "command",
+	"source": "server",
+	"command": {
+		"id": "identifier",
+		"action": "terminate",
+		"data": "error message",
+	}
+}
+```
+
+**Note**
+
+When responder or adapter engage with Priscilla server, after the initial
+engagement command is sent, client should wait for a command query. If it's an
+command with action "proceed", then engagement is confirmed and normal
+activities can begin. The source identifier that is assigned to the source will
+be returned as the value in the "data" field. If the client's source id has
+been accepted, it will be returned in this field. If it has been assigned a new
+source identifier, it too will be returned in this field. Though this has very
+little use for client as the server dispatcher would always ignore the source
+field after initial engagement and insert the source id from the initial
+engagement negation to every query came from that source.
+
+If an error occures during the engagement process, then server would send back
+a "terminate" command with an error message as the value in the "data" field,
+then close the connection afterward.
+
 
 ### Disengage request (S->R/A, R/A->S)
 

@@ -70,6 +70,17 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 					logger.Info.Println("Engagement accepted: ", id)
 					req.EngageResp <- id
 					close(req.EngageResp)
+
+					req.Encoder.Encode(&query{
+						Type:   "command",
+						Source: "server",
+						To:     id,
+						Command: &commandBlock{
+							Id:     generateId(),
+							Action: "proceed",
+							Data:   id,
+						},
+					})
 				}
 			case "disengage":
 				if q.Source != "" {
