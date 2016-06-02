@@ -26,6 +26,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 	// if it's operation to register pattern or command, perform registration
 
 	connMap := make(map[string]*json.Encoder)
+	isAdapter := make(map[string]bool) // not adapter then responder
 
 	for {
 		req := <-request
@@ -43,31 +44,38 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			switch cmd.Action {
 			case "engage":
 				if req.Encoder == nil {
-					logger.Error.Println("No connection provided for engagement")
+					logger.Error.Println(
+						"No connection provided for engagement")
 					logger.Error.Fatal("Bad code, check code ininitialize()")
 				} else {
-					id := q.Source
+					if err := cmd.engageChk(q.Source, conf.Secret); err == nil {
+						id := q.Source
+						// no source identifier given, we'll use a random
+						// source id
+						if id == "" {
+							id = generateId()
+						}
 
-					// no source identifier given, we'll use a random source id
-					if id == "" {
-						id = generateId()
-					}
+						// source identifier collision, use a random source id
+						// and keep generating until no collision is found
+						for _, ok := connMap[id]; ok; _, ok = connMap[id] {
+							id = generateId()
+						}
 
-					// source identifier collision, use a random source id
-					// and keep generating until no collision is found
-					for _, ok := connMap[id]; ok; _, ok = connMap[id] {
-						id = generateId()
-					}
+						connMap[id] = req.Encoder
 
-					connMap[id] = req.Encoder
+						if cmd.Type == "adapter" {
+							isAdapter[id] = true
+						} else {
+							isAdapter[id] = false
+						}
 
-					if id != q.Source && q.Source != "" {
-						logger.Warn.Println("Requester's source id already",
-							"taken, assign new source ID: ", q.Source,
-							"-->", id)
-					}
+						if id != q.Source && q.Source != "" {
+							logger.Warn.Println("Requester's source id already",
+								"taken, assign new source ID: ", q.Source,
+								"-->", id)
+						}
 
-					if err := q.Command.validateEngagement(q.Source, conf.Secret); err == nil {
 						logger.Info.Println("Engagement accepted: ", id)
 						req.EngageResp <- id
 						close(req.EngageResp)
@@ -90,7 +98,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 						req.Encoder.Encode(&query{
 							Type:   "command",
 							Source: "server",
-							To:     id,
+							To:     q.Source,
 							Command: &commandBlock{
 								Id:     generateId(),
 								Action: "terminate",
@@ -102,6 +110,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			case "disengage":
 				if q.Source != "" {
 					delete(connMap, q.Source)
+					delete(isAdapter, q.Source)
 				}
 				logger.Info.Println("Connection disengaged: ", q.Source)
 			default:

@@ -28,7 +28,11 @@ func (c *commandBlock) handleCommand(source string,
 	logger.Debug.Println("Time: ", c.Time)
 }
 
-func (c *commandBlock) validateEngagement(source, secret string) error {
+func (c *commandBlock) engageChk(source, secret string) error {
+	if c.Type != "adapter" && c.Type != "responder" {
+		return errors.New("Invalid client engagement type: " + c.Type)
+	}
+
 	if c.Data == "" {
 		return errors.New("No auth data received")
 	}

@@ -273,7 +273,7 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 			} else {
 				if err := q.validate(); err == nil {
 					// ignore the source identifier from the client, we'll
-					// use the identifier returned from engagement
+					// use the identifier assigned during engagement
 					q.Source = id
 
 					// if message is from adapter, ignore the value of the "to"
