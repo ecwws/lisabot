@@ -67,20 +67,37 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 							"-->", id)
 					}
 
-					logger.Info.Println("Engagement accepted: ", id)
-					req.EngageResp <- id
-					close(req.EngageResp)
+					if err := q.Command.validateEngagement(q.Source, conf.Secret); err == nil {
+						logger.Info.Println("Engagement accepted: ", id)
+						req.EngageResp <- id
+						close(req.EngageResp)
 
-					req.Encoder.Encode(&query{
-						Type:   "command",
-						Source: "server",
-						To:     id,
-						Command: &commandBlock{
-							Id:     generateId(),
-							Action: "proceed",
-							Data:   id,
-						},
-					})
+						req.Encoder.Encode(&query{
+							Type:   "command",
+							Source: "server",
+							To:     id,
+							Command: &commandBlock{
+								Id:     generateId(),
+								Action: "proceed",
+								Data:   id,
+							},
+						})
+					} else {
+						logger.Error.Println("unable to valide engagement", err)
+						req.EngageResp <- ""
+						close(req.EngageResp)
+
+						req.Encoder.Encode(&query{
+							Type:   "command",
+							Source: "server",
+							To:     id,
+							Command: &commandBlock{
+								Id:     generateId(),
+								Action: "terminate",
+								Data:   err.Error(),
+							},
+						})
+					}
 				}
 			case "disengage":
 				if q.Source != "" {

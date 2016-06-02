@@ -223,7 +223,9 @@ long as the communication protocol stays the same).
 	"command": {
 		"id": "identifier",
 		"action": "engage",
-		"type": "adapter"
+		"type": "adapter",
+		"time": unixtimestamp,
+		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
 	}
 }
 ```
@@ -238,6 +240,8 @@ long as the communication protocol stays the same).
 		"id": "identifier",
 		"action": "engage",
 		"type": "responder"
+		"time": unixtimestamp,
+		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
 	}
 }
 ```
@@ -250,6 +254,12 @@ Messages from Adapters, if a "to" field is ever set, it will be ignored as they
 will always go through the pattern matching routine in the dispatcher. Messages
 from responder on the other hand, would never go through a pattern matching
 routine and would be sent directly to the "to" indicated source.
+
+Timestamp must be within 10 seconds of server's current time. If the timestamp
+is within range and HMAC matches the server's calculation, a "proceed" command
+will be sent back as acknowledgement. If either time is out of range, or HMAC
+calculation doesn't match, a "terminate" command will be sent back followed by
+closing of the connection.
 
 ### Engagement success response (S->A, S->R)
 
