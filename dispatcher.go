@@ -26,7 +26,6 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 	// if it's operation to register pattern or command, perform registration
 
 	connMap := make(map[string]*json.Encoder)
-	isAdapter := make(map[string]bool) // not adapter then responder
 
 	for {
 		req := <-request
@@ -63,12 +62,6 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 						}
 
 						connMap[id] = req.Encoder
-
-						if cmd.Type == "adapter" {
-							isAdapter[id] = true
-						} else {
-							isAdapter[id] = false
-						}
 
 						if id != q.Source && q.Source != "" {
 							logger.Warn.Println("Requester's source id already",
@@ -110,7 +103,6 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			case "disengage":
 				if q.Source != "" {
 					delete(connMap, q.Source)
-					delete(isAdapter, q.Source)
 				}
 				logger.Info.Println("Connection disengaged: ", q.Source)
 			default:

@@ -331,9 +331,10 @@ then close the connection afterward.
 	"command": {
 		"id": "identifier",
 		"action": "register",
-		"type": "pattern",
+		"type": "prefix",
 		"data": "regex_string"
-		"options": ["fallthrough", "unhandled"]
+		"array": ["help-command", "help-message"],
+		"options": ["fallthrough"]
 	}
 }
 ```

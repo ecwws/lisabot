@@ -46,6 +46,13 @@ type passiveResponderConfig struct {
 	substitute     map[int]bool
 }
 
+type activeResponderConfig struct {
+	regex     regexp.Regexp
+	source    string
+	id        string
+	matchNext bool
+}
+
 var logger *prislog.PrisLog
 var conf config
 var prefixPResponders []*passiveResponderConfig   // passive
@@ -269,7 +276,10 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 					conn.Close()
 					break
 				}
-				isAdapter = true
+
+				if q.Command.Type == "adapter" {
+					isAdapter = true
+				}
 			} else {
 				if err := q.validate(); err == nil {
 					// ignore the source identifier from the client, we'll
@@ -280,6 +290,13 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 					// field, it should always be empty or "server"
 					if isAdapter {
 						q.To = ""
+					} else if q.To == "" {
+						// don't forward the responder message that is missing
+						// "to" field, this could potentially cause an infinite
+						// loop
+						logger.Error.Println(
+							"Responder query missing 'to' field")
+						continue
 					}
 					dispatcherChan <- &dispatcherRequest{
 						Query:   q,
