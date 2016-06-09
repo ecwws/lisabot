@@ -33,20 +33,29 @@ func (m *messageBlock) handleMessage(source string,
 		trimmed := strings.TrimLeft(m.Message[conf.prefixLen:], " ")
 
 		if !checkHelp(trimmed, source, m.Room, dispatch) {
-			triggerPassiveResponders(prefixPResponders, trimmed, source, m.Room,
-				m.From, false, dispatch)
+			if !triggerActiveResponders(prefixAResponders, trimmed, source, m,
+				false, dispatch) {
+
+				triggerPassiveResponders(prefixPResponders, trimmed, source,
+					m.Room, m.From, false, dispatch)
+			}
 		}
 	} else {
 		logger.Debug.Println("Non-prefix match triggered!")
-		matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
-			source, m.Room, m.From, false, dispatch)
-		if !matched && m.Mentioned {
-			trimmed := strings.TrimLeft(m.Stripped, " ")
 
-			if !checkHelp(trimmed, source, m.Room, dispatch) {
-				logger.Debug.Println("Mention match triggered!")
-				triggerPassiveResponders(mentionPResponders, trimmed, source,
-					m.Room, m.From, true, dispatch)
+		if !triggerActiveResponders(noPrefixAResponders, m.Message, source, m,
+			false, dispatch) {
+
+			matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
+				source, m.Room, m.From, false, dispatch)
+			if !matched && m.Mentioned {
+				trimmed := strings.TrimLeft(m.Stripped, " ")
+
+				if !checkHelp(trimmed, source, m.Room, dispatch) {
+					logger.Debug.Println("Mention match triggered!")
+					triggerPassiveResponders(mentionPResponders, trimmed, source,
+						m.Room, m.From, true, dispatch)
+				}
 			}
 		}
 	}

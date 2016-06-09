@@ -8,6 +8,30 @@ import (
 	"strings"
 )
 
+func triggerActiveResponders(responders *list.List, trimmed, source string,
+	m *messageBlock, metionMode bool, dispatch chan<- *dispatcherRequest) bool {
+
+	for eAr := responders.Front(); eAr != nil; eAr = eAr.Next() {
+		ar := eAr.Value.(*activeResponderConfig)
+		if ar.regex.MatchString(trimmed) {
+			q := &query{
+				Type:    "message",
+				Source:  source,
+				To:      ar.source,
+				Message: m,
+			}
+
+			logger.Debug.Println("Active responder match for:", ar.source)
+			dispatch <- &dispatcherRequest{Query: q}
+
+			if !ar.matchNext {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func triggerPassiveResponders(responders *list.List, message,
 	source, room, from string, mentionMode bool,
 	dispatch chan<- *dispatcherRequest) (matched bool) {
