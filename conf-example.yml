@@ -37,6 +37,7 @@ responders:
       args: ["__0__"]
       help: "let bot answer your question"
       help-commands: ['..., pris', '..., pris?', '"@mention in the msg"']
+      help-mention-commands: ["..."]
       # "md5.*":
       #   prefix: true
       #   trim: true

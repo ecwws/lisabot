@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -32,34 +33,49 @@ type responderConfig struct {
 }
 
 type passiveResponderConfig struct {
-	Name           string   `yaml:"name"`
-	Match          []string `yaml:"match"`
-	MentionMatch   []string `yaml:"mentionmatch"`
-	NoPrefix       bool     `yaml:"noprefix"`
-	FallThrough    bool     `yaml:"fallthrough"`
-	Cmd            string   `yaml:"cmd"`
-	Args           []string `yaml:"args"`
-	HelpSimple     string   `yaml:"help"`
-	HelpSimpleCmds []string `yaml:"help-commands"`
-	regex          []*regexp.Regexp
-	mRegex         []*regexp.Regexp
-	substitute     map[int]bool
+	Name            string   `yaml:"name"`
+	Match           []string `yaml:"match"`
+	MentionMatch    []string `yaml:"mentionmatch"`
+	NoPrefix        bool     `yaml:"noprefix"`
+	FallThrough     bool     `yaml:"fallthrough"`
+	Cmd             string   `yaml:"cmd"`
+	Args            []string `yaml:"args"`
+	Help            string   `yaml:"help"`
+	HelpCmds        []string `yaml:"help-commands"`
+	HelpMentionCmds []string `yaml:"help-mention-commands"`
+	regex           []*regexp.Regexp
+	mRegex          []*regexp.Regexp
+	substitute      map[int]bool
 }
 
 type activeResponderConfig struct {
-	regex     regexp.Regexp
+	regex     *regexp.Regexp
 	source    string
 	id        string
 	matchNext bool
+	helpCmd   string
+	help      string
+}
+
+type helpInfo struct {
+	helpCmd  string
+	helpMsg  string
+	noPrefix bool
+	mention  bool
 }
 
 var logger *prislog.PrisLog
 var conf config
-var prefixPResponders []*passiveResponderConfig   // passive
-var noPrefixPResponders []*passiveResponderConfig // passive
-var mentionPResponders []*passiveResponderConfig  // passive
+var prefixPResponders *list.List
+var noPrefixPResponders *list.List
+var mentionPResponders *list.List
+var unhandledPResponders *list.List
+var prefixAResponders *list.List
+var noPrefixAResponders *list.List
+var mentionAResponders *list.List
+var unhandledAResponders *list.List
 var subRegex *regexp.Regexp
-var help map[string]string
+var help *list.List
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
@@ -107,13 +123,17 @@ func main() {
 
 	logger.Debug.Println("Config loaded:", conf)
 
-	prefixPResponders = make([]*passiveResponderConfig, 0)
-	noPrefixPResponders = make([]*passiveResponderConfig, 0)
-	mentionPResponders = make([]*passiveResponderConfig, 0)
+	prefixPResponders = list.New()
+	noPrefixPResponders = list.New()
+	mentionPResponders = list.New()
+
+	prefixAResponders = list.New()
+	noPrefixAResponders = list.New()
+	mentionAResponders = list.New()
 
 	subRegex = regexp.MustCompile("__([[:digit:]])__")
 
-	help = make(map[string]string)
+	help = list.New()
 
 	for _, pr := range conf.Responders.Passive {
 		logger.Debug.Println("Passive responder:", *pr)
@@ -159,24 +179,42 @@ func main() {
 
 		if pr.NoPrefix {
 			logger.Debug.Println("Registered NoPrefix responder:", pr.Name)
-			noPrefixPResponders = append(noPrefixPResponders, pr)
+			noPrefixPResponders.PushBack(pr)
 		} else {
 			logger.Debug.Println("Registered Prefix responder:", pr.Name)
-			prefixPResponders = append(prefixPResponders, pr)
+			prefixPResponders.PushBack(pr)
 		}
 
 		if len(pr.mRegex) != 0 {
 			logger.Debug.Println("Registered Mention responder:", pr.Name)
-			mentionPResponders = append(mentionPResponders, pr)
+			mentionPResponders.PushBack(pr)
 		}
 
-		if pr.HelpSimple == "" || len(pr.HelpSimpleCmds) == 0 {
+		if pr.Help == "" || len(pr.HelpCmds) == 0 {
 			logger.Error.Fatal(
 				"Missing help or help-commands for passive responder: ",
 				pr.Name)
 		}
-		for _, cmd := range pr.HelpSimpleCmds {
-			help[cmd] = pr.HelpSimple
+
+		for _, cmd := range pr.HelpCmds {
+			info := &helpInfo{
+				helpCmd: cmd,
+				helpMsg: pr.Help,
+			}
+
+			if pr.NoPrefix {
+				info.noPrefix = true
+			}
+
+			help.PushBack(info)
+		}
+
+		for _, cmd := range pr.HelpMentionCmds {
+			help.PushBack(&helpInfo{
+				helpCmd: cmd,
+				helpMsg: pr.Help,
+				mention: true,
+			})
 		}
 	}
 
@@ -290,12 +328,23 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 					// field, it should always be empty or "server"
 					if isAdapter {
 						q.To = ""
+						if q.Type == "command" &&
+							q.Command.Action == "register" {
+
+							logger.Error.Println(
+								"Adapter cannot register commands")
+							continue
+						}
 					} else if q.To == "" {
 						// don't forward the responder message that is missing
 						// "to" field, this could potentially cause an infinite
 						// loop
 						logger.Error.Println(
 							"Responder query missing 'to' field")
+						continue
+					} else if q.Type == "message" && q.To == "server" {
+						logger.Error.Println(
+							"Responder message cannot target 'server'")
 						continue
 					}
 					dispatcherChan <- &dispatcherRequest{

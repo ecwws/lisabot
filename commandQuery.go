@@ -10,13 +10,14 @@ import (
 )
 
 type commandBlock struct {
-	Id      string   `json:"id"`
-	Action  string   `json:"action"`
-	Type    string   `json:"type"`
-	Time    int64    `json:"time"`
-	Data    string   `json:"data"`
-	Array   []string `json:"array"`
-	Options []string `json:"options"`
+	Id      string            `json:"id"`
+	Action  string            `json:"action"`
+	Type    string            `json:"type"`
+	Time    int64             `json:"time"`
+	Data    string            `json:"data"`
+	Array   []string          `json:"array"`
+	Options []string          `json:"options"`
+	Map     map[string]string `json:"map,omitempty"`
 }
 
 func (c *commandBlock) handleCommand(source string,
@@ -26,6 +27,21 @@ func (c *commandBlock) handleCommand(source string,
 	logger.Debug.Println("Action: ", c.Action)
 	logger.Debug.Println("Type: ", c.Type)
 	logger.Debug.Println("Time: ", c.Time)
+}
+
+func (c *commandBlock) registerChk() error {
+	if c.Type != "prefix" && c.Type != "noprefix" && c.Type != "mention" &&
+		c.Type != "unhandled" {
+
+		return errors.New("Unsupported register type: " + c.Type)
+	}
+	if c.Data == "" {
+		return errors.New("Missing regex expression")
+	}
+	if len(c.Array) < 2 {
+		return errors.New("Missing help info (in \"array\" element)")
+	}
+	return nil
 }
 
 func (c *commandBlock) engageChk(source, secret string) error {

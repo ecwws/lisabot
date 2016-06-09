@@ -35,12 +35,22 @@ func checkHelp(msg, source, room string, dp chan<- *dispatcherRequest) bool {
 	return true
 }
 
-func showHelp(cmdPrefix string) (helpMsg string) {
+func showHelp(cmdPrefix string) string {
 
-	helpMsg += "Here is what I can do:\n"
-	for cmd, msg := range help {
-		helpMsg += fmt.Sprintf("%s - %s\n", cmd, msg)
+	helpMsg := "Here is what I can do:\n"
+	for helpE := help.Front(); helpE != nil; helpE = helpE.Next() {
+		h := helpE.Value.(*helpInfo)
+
+		if h.mention {
+			helpMsg += fmt.Sprintf("(when mentioned) %s - %s\n", h.helpCmd,
+				h.helpMsg)
+		} else if h.noPrefix {
+			helpMsg += fmt.Sprintf("%s - %s\n", h.helpCmd, h.helpMsg)
+		} else {
+			helpMsg += fmt.Sprintf("%s %s - %s\n", conf.Prefix, h.helpCmd,
+				h.helpMsg)
+		}
 	}
 
-	return
+	return helpMsg
 }

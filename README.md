@@ -221,7 +221,6 @@ long as the communication protocol stays the same).
 	"type": "command",
 	"source": "source_identifier",
 	"command": {
-		"id": "identifier",
 		"action": "engage",
 		"type": "adapter",
 		"time": unixtimestamp,
@@ -237,7 +236,6 @@ long as the communication protocol stays the same).
 	"type": "command",
 	"source": "source_identifier",
 	"command": {
-		"id": "identifier",
 		"action": "engage",
 		"type": "responder"
 		"time": unixtimestamp,
@@ -314,15 +312,12 @@ then close the connection afterward.
 	"type": "command",
 	"source": "identifier_or_server",
 	"command": {
-		"id": "identitfier",
 		"action": "disengage",
 	}
 }
 ```
 
 ### Active responder command registration (R->S)
-
-**Not Yet Implemented**
 
 ```json
 {
@@ -339,21 +334,9 @@ then close the connection afterward.
 }
 ```
 
-### Active responder command registration complete notification (R->S)
+**Note**
 
-**Not Yet Implemented**
-
-```json
-{
-	"type": "command",
-	"source": "source_identifier",
-	"command": {
-		"id": "identifier",
-		"action": "noop",
-		"type": "command",
-	}
-}
-```
+"type" field: one of "prefix", "noprefix", "mention", "unhandled"
 
 ### Message from adapter (A->S)
 
@@ -368,29 +351,46 @@ the message.
 {
 	"type": "message",
 	"source": "source_identifier",
-  "to": "server",
+	"to": "server",
 	"message": {
 		"message": "message",
 		"from": "user_identifier",
 		"room": "room_identifier",
-    "mentioned": boolean,
-    "stripped": "message stripped of mentions"
+		"mentioned": boolean,
+		"stripped": "message stripped of mentions"
 	}
 }
 ```
 
-### Message from active responder (R->S)
+### Message from responder (R->S)
 
 ```json
 {
 	"type": "message",
 	"source": "source_identifier",
-  "to": "dest_identifier",
+	"to": "dest_identifier",
 	"message": {
 		"message": "message",
 		"from": "user_identifier",
 		"room": "room_identifier",
-    "mentionnotify": ["user1", "user2", "user3"]
+		"mentionnotify": ["user1", "user2", "user3"]
+	}
+}
+```
+
+### Request user information (R->S)
+
+**Not Yet Implemented**
+
+```json
+{
+	"type": "command",
+	"source": "source_identifier",
+	"command": {
+		"id": "identifier",
+		"action": "request",
+		"type": "user",
+		"data": "user_name"
 	}
 }
 ```
@@ -407,7 +407,7 @@ the message.
 		"id": "identifier",
 		"action": "request",
 		"type": "user",
-		"options": ["user1", "user2", "user3", "user4"]
+		"data": "user_name"
 	}
 }
 ```
@@ -424,7 +424,24 @@ the message.
 		"id": "identifier",
 		"action": "info",
 		"type": "user",
-		"array": ["data1", "data2", "data3", "data4"]
+		"map": {"field1": "data1", "field2": "data2"}
+	}
+}
+```
+
+### User information response (S->R)
+
+**Not Yet Implemented**
+
+```json
+{
+	"type": "command",
+	"source": "server",
+	"command": {
+		"id": "identifier",
+		"action": "info",
+		"type": "user",
+		"map": {"field1": "data1", "field2": "data2"}
 	}
 }
 ```
@@ -463,3 +480,9 @@ the message.
 }
 ```
 
+## Fun stuff
+
+The project name, Priscilla, which would be mostly referred as Pris in the
+chatrooms, came from the famous novel Do Androids Dream of Electric Sheep? by
+Philip K. Dick, some may know it as Blade Runner. Pris is one of the escaped
+Nexus-6 androids that was hunted down by bounty hunters.

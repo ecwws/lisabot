@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 )
 
 type dispatcherRequest struct {
@@ -78,13 +79,12 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 							Source: "server",
 							To:     id,
 							Command: &commandBlock{
-								Id:     generateId(),
 								Action: "proceed",
 								Data:   id,
 							},
 						})
 					} else {
-						logger.Error.Println("unable to valide engagement", err)
+						logger.Error.Println("Invalid engagement request", err)
 						req.EngageResp <- ""
 						close(req.EngageResp)
 
@@ -93,7 +93,6 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 							Source: "server",
 							To:     q.Source,
 							Command: &commandBlock{
-								Id:     generateId(),
 								Action: "terminate",
 								Data:   err.Error(),
 							},
@@ -105,6 +104,49 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 					delete(connMap, q.Source)
 				}
 				logger.Info.Println("Connection disengaged: ", q.Source)
+			case "register":
+				logger.Debug.Println("Register command received:", cmd)
+				if err := cmd.registerChk(); err == nil {
+					ar := new(activeResponderConfig)
+					ar.regex, err = regexp.Compile(cmd.Data)
+					if err != nil {
+						logger.Error.Println("Error compiling regex:", err)
+						continue
+					}
+					ar.source = q.Source
+					ar.id = cmd.Id
+					ar.helpCmd = cmd.Array[0]
+					ar.help = cmd.Array[1]
+					for _, option := range cmd.Options {
+						if option == "fallthrough" {
+							ar.matchNext = true
+						}
+					}
+
+					helpMsg := &helpInfo{
+						helpCmd: ar.helpCmd,
+						helpMsg: ar.help,
+					}
+
+					switch cmd.Type {
+					case "prefix":
+						help.PushBack(helpMsg)
+						prefixAResponders.PushBack(ar)
+					case "noprefix":
+						helpMsg.noPrefix = true
+						help.PushBack(helpMsg)
+						noPrefixAResponders.PushBack(ar)
+					case "mention":
+						helpMsg.mention = true
+						help.PushBack(helpMsg)
+						mentionAResponders.PushBack(ar)
+					case "unhandled":
+						unhandledAResponders.PushBack(ar)
+					}
+					logger.Debug.Println("Active adapter registered:", ar)
+				} else {
+					logger.Error.Println("Invalid register command:", err)
+				}
 			default:
 				go cmd.handleCommand(q.Source, request)
 			}

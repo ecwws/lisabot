@@ -1,18 +1,21 @@
 package main
 
 import (
+	"container/list"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-func triggerPassiveResponders(responders []*passiveResponderConfig, message,
+func triggerPassiveResponders(responders *list.List, message,
 	source, room, from string, mentionMode bool,
 	dispatch chan<- *dispatcherRequest) (matched bool) {
 
 ResponderLoop:
-	for _, pr := range responders {
+	for epr := responders.Front(); epr != nil; epr = epr.Next() {
+		pr := epr.Value.(*passiveResponderConfig)
+
 		var patterns []*regexp.Regexp
 		if mentionMode {
 			logger.Debug.Println("Using mention pattern")
