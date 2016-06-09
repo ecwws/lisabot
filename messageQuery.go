@@ -53,8 +53,13 @@ func (m *messageBlock) handleMessage(source string,
 
 				if !checkHelp(trimmed, source, m.Room, dispatch) {
 					logger.Debug.Println("Mention match triggered!")
-					triggerPassiveResponders(mentionPResponders, trimmed, source,
-						m.Room, m.From, true, dispatch)
+
+					if !triggerActiveResponders(mentionAResponders, m.Message,
+						source, m, true, dispatch) {
+
+						triggerPassiveResponders(mentionPResponders, trimmed,
+							source, m.Room, m.From, true, dispatch)
+					}
 				}
 			}
 		}

@@ -70,10 +70,12 @@ var prefixPResponders *list.List
 var noPrefixPResponders *list.List
 var mentionPResponders *list.List
 var unhandledPResponders *list.List
+
 var prefixAResponders *list.List
 var noPrefixAResponders *list.List
 var mentionAResponders *list.List
 var unhandledAResponders *list.List
+
 var subRegex *regexp.Regexp
 var help *list.List
 
