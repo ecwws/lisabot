@@ -329,7 +329,12 @@ func serve(conn *net.TCPConn, dispatcherChan chan *dispatcherRequest) {
 					// if message is from adapter, ignore the value of the "to"
 					// field, it should always be empty or "server"
 					if isAdapter {
-						q.To = ""
+						// only info reply allowed to pass directly from adapter
+						// to responder
+						if q.Type != "command" || q.Command.Action != "info" {
+							q.To = ""
+						}
+
 						if q.Type == "command" &&
 							q.Command.Action == "register" {
 

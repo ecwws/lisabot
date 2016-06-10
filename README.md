@@ -168,7 +168,7 @@ learning go and wanted to do something useful and practical (um...chat bot is
 useful and practical...right?) so I can practice the newly acquired go
 knowledge. I tried to be as idiomatic go as this is a learning experience for me
 to use go. I tried really hard to make the code free of locks and use the *share
-memory by communicating* methodology. So far it's successfuly. Though that's not
+memory by communicating* methodology. So far it's successful. Though that's not
 to say I won't eventually stumble onto a problem that I couldn't solve using
 this methodology. But at the moment, the entire Priscilla code base is
 mutex-free and lock-free. If you're to write a new Priscilla adapter or
@@ -223,7 +223,7 @@ long as the communication protocol stays the same).
 	"command": {
 		"action": "engage",
 		"type": "adapter",
-		"time": unixtimestamp,
+		"time": 123456789,
 		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
 	}
 }
@@ -238,7 +238,7 @@ long as the communication protocol stays the same).
 	"command": {
 		"action": "engage",
 		"type": "responder"
-		"time": unixtimestamp,
+		"time": 123456789,
 		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
 	}
 }
@@ -356,7 +356,7 @@ the message.
 		"message": "message",
 		"from": "user_identifier",
 		"room": "room_identifier",
-		"mentioned": boolean,
+		"mentioned": false,
 		"stripped": "message stripped of mentions"
 	}
 }
@@ -378,48 +378,29 @@ the message.
 }
 ```
 
-### Request user information (R->S)
-
-**Not Yet Implemented**
+### Request user information (R->A)
 
 ```json
 {
 	"type": "command",
 	"source": "source_identifier",
+	"to": "adapter_identifier",
 	"command": {
 		"id": "identifier",
-		"action": "request",
-		"type": "user",
-		"data": "user_name"
+		"action": "user_request",
+		"type": "user / mention / email",
+		"data": "username or mention or email"
 	}
 }
 ```
 
-### Request user information (S->A)
-
-**Not Yet Implemented**
-
-```json
-{
-	"type": "command",
-	"source": "server",
-	"command": {
-		"id": "identifier",
-		"action": "request",
-		"type": "user",
-		"data": "user_name"
-	}
-}
-```
-
-### User information response (A->S)
-
-**Not Yet Implemented**
+### User information response (A->R)
 
 ```json
 {
 	"type": "command",
 	"source": "source_identifier",
+	"to": "originator_identifier",
 	"command": {
 		"id": "identifier",
 		"action": "info",
@@ -429,43 +410,23 @@ the message.
 }
 ```
 
-### User information response (S->R)
-
-**Not Yet Implemented**
+### Request room information (R->A)
 
 ```json
 {
 	"type": "command",
-	"source": "server",
+	"source": "source_identifier",
+	"to": "adapter_identifier",
 	"command": {
 		"id": "identifier",
-		"action": "info",
-		"type": "user",
-		"map": {"field1": "data1", "field2": "data2"}
+		"action": "room_request",
+		"type": "name / id",
+		"data": "room
 	}
 }
 ```
 
-### Request room information (S->A)
-
-**Not Yet Implemented**
-
-```json
-{
-	"type": "command",
-	"source": "server",
-	"command": {
-		"id": "identifier",
-		"action": "request",
-		"type": "room",
-		"options": ["room1", "room2", "room3", "room4"]
-	}
-}
-```
-
-### Room information response (A->S)
-
-**Not Yet Implemented**
+### Room information response (A->R)
 
 ```json
 {
@@ -475,10 +436,23 @@ the message.
 		"id": "identifier",
 		"action": "info",
 		"type": "room",
-		"array": ["data1", "data2", "data3", "data4"]
+		"map": {"field1": "data1", "field2": "data2"}
 	}
 }
 ```
+
+**Note** Both user and room information request are neither validated nor
+evaluated by Priscilla server, it's simply forwarded to the target adapter. The
+information response from the adapter, is also directly forwarded to the
+active responder, without being validated and evaluated. (Of course, it will
+still go through the basic query validation before it's forwarded, if it fails
+the basic validation, it will be discarded by the server). So the adapter and
+the responder are actually responsible for validating the information request
+and response.
+
+**Note** "action": "info" is the only query from adapter that Priscilla server
+would leave the "to" field intact. All other commands and messages from adapter
+woudl always have "to" field emptied out.
 
 ## Fun stuff
 

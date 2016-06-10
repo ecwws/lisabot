@@ -147,6 +147,23 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 				} else {
 					logger.Error.Println("Invalid register command:", err)
 				}
+			case "user_request":
+				fallthrough
+			case "room_request":
+				if q.To != "" && q.To != "server" {
+					logger.Debug.Println("Info request received from:",
+						q.Source)
+					logger.Debug.Println("Info request received to:", q.To)
+					logger.Debug.Println("Action:", cmd.Action)
+
+					if encoder, ok := connMap[q.To]; ok {
+						encoder.Encode(q)
+					} else {
+						logger.Error.Println("Destination doesn't exist:", q.To)
+					}
+				} else {
+					logger.Error.Println("Missing destination for info request")
+				}
 			default:
 				go cmd.handleCommand(q.Source, request)
 			}

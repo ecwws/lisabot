@@ -13,10 +13,10 @@ type commandBlock struct {
 	Id      string            `json:"id"`
 	Action  string            `json:"action"`
 	Type    string            `json:"type"`
-	Time    int64             `json:"time"`
-	Data    string            `json:"data"`
-	Array   []string          `json:"array"`
-	Options []string          `json:"options"`
+	Time    int64             `json:"time,omitempty"`
+	Data    string            `json:"data,omitempty"`
+	Array   []string          `json:"array,omitempty"`
+	Options []string          `json:"options,omitempty"`
 	Map     map[string]string `json:"map,omitempty"`
 }
 
@@ -26,7 +26,6 @@ func (c *commandBlock) handleCommand(source string,
 	logger.Debug.Println("Id: ", c.Id)
 	logger.Debug.Println("Action: ", c.Action)
 	logger.Debug.Println("Type: ", c.Type)
-	logger.Debug.Println("Time: ", c.Time)
 }
 
 func (c *commandBlock) registerChk() error {
