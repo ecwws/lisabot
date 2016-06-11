@@ -354,10 +354,16 @@ the message.
 	"to": "server",
 	"message": {
 		"message": "message",
-		"from": "user_identifier",
+		"from": "user_name",
 		"room": "room_identifier",
 		"mentioned": false,
-		"stripped": "message stripped of mentions"
+		"stripped": "message stripped of mentions",
+		"user": {
+			"id": "id",
+			"name": "user_name",
+			"mention": "user_mention",
+			"email": "user_email"
+		}
 	}
 }
 ```
@@ -388,7 +394,7 @@ the message.
 	"command": {
 		"id": "identifier",
 		"action": "user_request",
-		"type": "user / mention / email",
+		"type": "user / mention / email / id",
 		"data": "username or mention or email"
 	}
 }
@@ -402,7 +408,7 @@ the message.
 	"source": "source_identifier",
 	"to": "originator_identifier",
 	"command": {
-		"id": "identifier",
+		"id": "identifier (use the identifier from the request",
 		"action": "info",
 		"type": "user",
 		"map": {"field1": "data1", "field2": "data2"}

@@ -150,10 +150,12 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			case "user_request":
 				fallthrough
 			case "room_request":
+				fallthrough
+			case "info":
 				if q.To != "" && q.To != "server" {
-					logger.Debug.Println("Info request received from:",
+					logger.Debug.Println("Info command received from:",
 						q.Source)
-					logger.Debug.Println("Info request received to:", q.To)
+					logger.Debug.Println("Info command destined to:", q.To)
 					logger.Debug.Println("Action:", cmd.Action)
 
 					if encoder, ok := connMap[q.To]; ok {

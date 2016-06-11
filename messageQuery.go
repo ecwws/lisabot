@@ -5,12 +5,20 @@ import (
 )
 
 type messageBlock struct {
-	Message       string   `json:"message,omitempty"`
-	From          string   `json:"from,omitempty"`
-	Room          string   `json:"room,omitempty"`
-	Mentioned     bool     `json:"mentioned,omitempty"`
-	Stripped      string   `json:"stripped,omitempty"`
-	MentionNotify []string `json:"mentionnotify,omitempty"`
+	Message       string    `json:"message,omitempty"`
+	From          string    `json:"from,omitempty"`
+	Room          string    `json:"room,omitempty"`
+	Mentioned     bool      `json:"mentioned,omitempty"`
+	Stripped      string    `json:"stripped,omitempty"`
+	MentionNotify []string  `json:"mentionnotify,omitempty"`
+	User          *UserInfo `json:"user,omitempty"`
+}
+
+type UserInfo struct {
+	Id      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Mention string `string:"mention,omitempty"`
+	Email   string `string:"email,omitempty"`
 }
 
 func (m *messageBlock) handleMessage(source string,
