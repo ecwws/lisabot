@@ -132,6 +132,7 @@ func main() {
 	prefixAResponders = list.New()
 	noPrefixAResponders = list.New()
 	mentionAResponders = list.New()
+	unhandledAResponders = list.New()
 
 	subRegex = regexp.MustCompile("__([[:digit:]])__")
 

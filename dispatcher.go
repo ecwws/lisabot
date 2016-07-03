@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -18,6 +19,30 @@ func generateId() string {
 	b := make([]byte, 8)
 	io.ReadFull(rand.Reader, b)
 	return fmt.Sprintf("%x", b)
+}
+
+func removeSource(arl *list.List, source string) {
+	for eAr := arl.Front(); eAr != nil; eAr = eAr.Next() {
+		ar := eAr.Value.(*activeResponderConfig)
+		logger.Debug.Println("Remove check, source:", ar.source)
+		if ar.source == source {
+			rAr := eAr
+			eAr = eAr.Prev()
+			logger.Debug.Println("Deregistering active responder:", ar.helpCmd)
+			arl.Remove(rAr)
+			if eAr == nil {
+				break
+			}
+		}
+	}
+}
+
+func deregister(source string) {
+	logger.Debug.Println("Deregister started for:", source)
+	removeSource(prefixAResponders, source)
+	removeSource(noPrefixAResponders, source)
+	removeSource(mentionAResponders, source)
+	removeSource(unhandledAResponders, source)
 }
 
 func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
@@ -104,6 +129,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 					delete(connMap, q.Source)
 				}
 				logger.Info.Println("Connection disengaged: ", q.Source)
+				deregister(q.Source)
 			case "register":
 				logger.Debug.Println("Register command received:", cmd)
 				if err := cmd.registerChk(); err == nil {
