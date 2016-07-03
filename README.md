@@ -1,5 +1,7 @@
 # Priscilla
 
+[![Build Status](https://travis-ci.org/priscillachat/priscilla.svg?branch=master)](https://travis-ci.org/priscillachat/priscilla)
+
 Priscilla is a chat bot written in go. Most other popular chat bots today are
 written in interpreted language. In my opinion, it's a bit unpractical to write
 a chat bot in go the same way because it'll requires source code modification
