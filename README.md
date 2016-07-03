@@ -3,20 +3,27 @@
 [![Build Status](https://travis-ci.org/priscillachat/priscilla.svg?branch=master)](https://travis-ci.org/priscillachat/priscilla)
 [![Code Climate](https://codeclimate.com/github/priscillachat/priscilla/badges/gpa.svg)](https://codeclimate.com/github/priscillachat/priscilla)
 
-Priscilla is a chat bot written in go. Most other popular chat bots today are
-written in interpreted language. In my opinion, it's a bit unpractical to write
-a chat bot in go the same way because it'll requires source code modification
-and re-compilation every time you want to add functionalities to the bot. So I
-took a bit different approach.
+Priscilla is a chat bot written in go.
+
+Most chat bots today are written in interpreted languages where
+add-your-own-code is the typical model. The handful existing chatbot written in
+go also took the same approach. In my opinion however, this isn't quite
+practical for a compiled language like go, because any change to the bot would
+require re-compiliation of the entire bot's codebase--something you can get away
+with interpreted languages, but not so much in a compiled language. So I took a
+different approach with Priscilla.
 
 ## Server-Adapter-Responder Model
 
-Priscilla is made of three components: **Priscilla server**, **Priscilla
-Adapter**, and **Priscilla Responder**.
+Priscilla consists of three components:
+
+* **Priscilla server**
+* **Priscilla Adapter**
+* **Priscilla Responder**
 
 ### Priscilla Server
 
-In reality, Priscilla server is actually just a message dispatcher server that
+In reality, Priscilla server is just a message dispatcher server that
 acts as the courier to facilite the communication between adapters (connect to
 chat services) and responders (processes messages, performs actions, and
 respond to messages). Communication protocol is in JSON over TCP and is
@@ -69,7 +76,11 @@ Like adapter, active responder is a long running process that listens for
 requests form Priscilla server. And like adapter, active responder has to first
 engage the Priscilla server. Then active responder would perform regex pattern
 registration, where it tells Priscilla server what message should be forwarded to
-it. (This is not currently functional yet)
+it.
+
+Active responder can also be used as an active trigger, where responses aren't
+being triggered by incoming messages, instead, being triggered by timer event or
+other event sources such as http or tcp events.
 
 #### Passive Responder
 
