@@ -79,16 +79,49 @@ var unhandledAResponders *list.List
 var subRegex *regexp.Regexp
 var help *list.List
 
+var version, build string
+
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
 	loglevel :=
 		flag.String("loglevel", "warn", "log level: debug/info/warn/error")
+	logfile := flag.String("log", "STDOUT", "Log file")
+	showversion := flag.Bool("version", false, "show version and exit")
 
 	flag.Parse()
 
+	if *showversion {
+		if version == "" {
+			fmt.Println("Version: development")
+		} else {
+			fmt.Println("Version:", version)
+		}
+
+		if build == "" {
+			fmt.Println("Build: development")
+		} else {
+			fmt.Println("Build:", build)
+		}
+		os.Exit(0)
+	}
+
 	var err error
 
-	logger, err = prislog.NewLogger(os.Stdout, *loglevel)
+	var logwriter *os.File
+
+	if *logfile == "STDOUT" {
+		logwriter = os.Stdout
+	} else {
+		logwriter, err = os.OpenFile(*logfile,
+			os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			fmt.Println("Unable to write to log file", *logfile, ":", err)
+			os.Exit(1)
+		}
+		defer logwriter.Close()
+	}
+
+	logger, err = prislog.NewLogger(logwriter, *loglevel)
 
 	if err != nil {
 		fmt.Println("Error initializing logger: ", err)
@@ -222,13 +255,15 @@ func main() {
 	}
 
 	if conf.Port == 0 {
-		logger.Error.Fatal("No port specified!")
+		logger.Warn.Println("No port specified, using default: 4517")
+		conf.Port = 4517
 	}
 
 	// Prefix need to be free of excess spaces
 	conf.Prefix = strings.Trim(conf.Prefix, " ")
 	if len(conf.Prefix) < 1 {
-		logger.Error.Fatal("Prefix is empty")
+		logger.Warn.Println("No prefix specified, using default: pris")
+		conf.Prefix = "pris"
 	}
 	conf.Prefix += " "
 	conf.prefixLen = len(conf.Prefix)

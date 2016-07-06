@@ -15,6 +15,7 @@ type commandBlock struct {
 	Type    string            `json:"type"`
 	Time    int64             `json:"time,omitempty"`
 	Data    string            `json:"data,omitempty"`
+	Error   string            `json"error,omitempty"`
 	Array   []string          `json:"array,omitempty"`
 	Options []string          `json:"options,omitempty"`
 	Map     map[string]string `json:"map,omitempty"`

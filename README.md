@@ -422,7 +422,7 @@ the message.
 	"source": "source_identifier",
 	"to": "originator_identifier",
 	"command": {
-		"id": "identifier (use the identifier from the request",
+		"id": "identifier (use the identifier from the request)",
 		"action": "info",
 		"type": "user",
 		"map": {"field1": "data1", "field2": "data2"}
@@ -441,7 +441,7 @@ the message.
 		"id": "identifier",
 		"action": "room_request",
 		"type": "name / id",
-		"data": "room
+		"data": "room"
 	}
 }
 ```
@@ -456,10 +456,16 @@ the message.
 		"id": "identifier",
 		"action": "info",
 		"type": "room",
+		"error": "Error message (if request fails)",
 		"map": {"field1": "data1", "field2": "data2"}
 	}
 }
 ```
+
+**Note** "error" field is only send back when error occurs. Information
+requester should first evaluate whether "error" field is empty before
+proceeding. If "error" field contains value, the map part of the information
+response should be considered invalided and discarded.
 
 **Note** Both user and room information request are neither validated nor
 evaluated by Priscilla server, it's simply forwarded to the target adapter. The
