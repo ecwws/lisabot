@@ -53,9 +53,17 @@ func (c *commandBlock) engageChk(source, secret string) error {
 		return errors.New("No auth data received")
 	}
 
-	diff := time.Now().UTC().Unix() - c.Time
+	now := time.Now().UTC()
 
-	if diff > 10 || diff < 0 {
+	logger.Debug.Println("Current time:", now)
+	logger.Debug.Println("Current unix timestamp:", now.Unix())
+	logger.Debug.Println("Received auth unix timestamp:", c.Time)
+
+	diff := now.Unix() - c.Time
+
+	logger.Info.Println("Time differential:", diff)
+
+	if diff > 5 || diff < -5 {
 		return errors.New("Timestamp out of range")
 	}
 
