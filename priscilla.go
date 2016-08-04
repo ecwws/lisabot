@@ -23,6 +23,8 @@ type config struct {
 	PrefixAlt  []string         `yaml:"prefix-alit"`
 	Help       string           `yaml:"help-command"`
 	Secret     string           `yaml:"secret"`
+	LogLevel   string           `yaml:"loglevel"`
+	LogFile    string           `yaml:"logfile"`
 	Responders *responderConfig `yaml:"responders"`
 	prefixLen  int
 	helpRegex  *regexp.Regexp
@@ -83,9 +85,6 @@ var version, build string
 
 func main() {
 	confFile := flag.String("conf", "", "Conf files, you know, conf files")
-	loglevel :=
-		flag.String("loglevel", "warn", "log level: debug/info/warn/error")
-	logfile := flag.String("log", "STDOUT", "Log file")
 	showversion := flag.Bool("version", false, "show version and exit")
 
 	flag.Parse()
@@ -107,41 +106,49 @@ func main() {
 
 	var err error
 
-	var logwriter *os.File
-
-	if *logfile == "STDOUT" {
-		logwriter = os.Stdout
-	} else {
-		logwriter, err = os.OpenFile(*logfile,
-			os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-		if err != nil {
-			fmt.Println("Unable to write to log file", *logfile, ":", err)
-			os.Exit(1)
-		}
-		defer logwriter.Close()
-	}
-
-	logger, err = prislog.NewLogger(logwriter, *loglevel)
-
-	if err != nil {
-		fmt.Println("Error initializing logger: ", err)
-		os.Exit(1)
-	}
-
 	if *confFile == "" {
-		logger.Error.Fatal("Need to specify a conf file")
+		fmt.Fprintln(os.Stderr, "Need to specify a conf file")
+		os.Exit(1)
 	}
 
 	confRaw, err := ioutil.ReadFile(*confFile)
 
 	if err != nil {
-		logger.Error.Fatal("Error reading config file: ", err)
+		fmt.Fprintln(os.Stderr, "Error reading config file: ", err)
+		os.Exit(1)
 	}
 
 	err = yaml.Unmarshal(confRaw, &conf)
 
 	if err != nil {
-		logger.Error.Fatal("Error parsing config file: ", err)
+		fmt.Fprintln(os.Stderr, "Error parsing config file: ", err)
+		os.Exit(1)
+	}
+
+	var logwriter *os.File
+
+	if conf.LogFile == "" || conf.LogFile == "STDOUT" {
+		logwriter = os.Stdout
+	} else {
+		logwriter, err = os.OpenFile(conf.LogFile,
+			os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			fmt.Fprintln(os.Stderr,
+				"Unable to write to log file", conf.LogFile, ":", err)
+			os.Exit(1)
+		}
+		defer logwriter.Close()
+	}
+
+	if conf.LogLevel == "" {
+		conf.LogLevel = "warn"
+	}
+
+	logger, err = prislog.NewLogger(logwriter, conf.LogLevel)
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error initializing logger: ", err)
+		os.Exit(1)
 	}
 
 	if conf.Help == "" {

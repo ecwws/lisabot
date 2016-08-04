@@ -11,6 +11,7 @@ adapters:
       user: "priscilla@priscilla.chat"
       pass: "abcdefg"
       nick: "Priscilla"
+      port: 4517
 responders:
     # active:
     #   echo:
