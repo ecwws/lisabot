@@ -67,7 +67,16 @@ ResponderLoop:
 			var subArgs []string
 			subbed := false
 			// submatch, may need to substitute
-			if len(match) > 1 && len(pr.substitute) > 0 {
+
+			logger.Debug.Println("Match len:", len(match))
+			logger.Debug.Println("Substitution:", len(pr.substitute))
+			logger.Debug.Println("Room substitution:", len(pr.roomParam))
+
+			if len(match) >= 1 &&
+				(len(pr.substitute) > 0 || len(pr.roomParam) > 0) {
+
+				logger.Debug.Println("Substitution necessary")
+
 				subArgs = make([]string, len(pr.Args))
 				copy(subArgs, pr.Args)
 				for i, _ := range pr.substitute {
@@ -89,6 +98,12 @@ ResponderLoop:
 							subbed = true
 						}
 					}
+				}
+				for i, _ := range pr.roomParam {
+					logger.Debug.Println("Room substitution")
+					subArgs[i] =
+						strings.Replace(subArgs[i], "__room__", room, -1)
+					subbed = true
 				}
 			}
 

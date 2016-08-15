@@ -48,6 +48,7 @@ type passiveResponderConfig struct {
 	regex           []*regexp.Regexp
 	mRegex          []*regexp.Regexp
 	substitute      map[int]bool
+	roomParam       map[int]bool
 }
 
 type activeResponderConfig struct {
@@ -175,6 +176,7 @@ func main() {
 	unhandledAResponders = list.New()
 
 	subRegex = regexp.MustCompile("__([[:digit:]])__")
+	roomRegex := regexp.MustCompile("(__room__)")
 
 	help = list.New()
 
@@ -214,9 +216,15 @@ func main() {
 		}
 
 		pr.substitute = make(map[int]bool)
+		pr.roomParam = make(map[int]bool)
 		for i, arg := range pr.Args {
 			if ms := subRegex.MatchString(arg); ms {
+				logger.Debug.Println("Substitution found:", arg)
 				pr.substitute[i] = true
+			}
+			if rs := roomRegex.MatchString(arg); rs {
+				pr.roomParam[i] = true
+				logger.Debug.Println("Room substitution found:", arg)
 			}
 		}
 
