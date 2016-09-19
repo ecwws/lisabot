@@ -25,20 +25,21 @@ func (m *messageBlock) handleMessage(source string,
 	dispatch chan<- *dispatcherRequest) {
 
 	logger.Debug.Println("Message: ", m.Message)
+	logger.Debug.Println("Stripped Message: ", m.Stripped)
 	logger.Debug.Println("From: ", m.From)
 	logger.Debug.Println("Room: ", m.Room)
 
 	prefixMatch := false
 
-	if len(m.Message) > conf.prefixLen &&
-		m.Message[0:conf.prefixLen] == conf.Prefix {
+	if len(m.Stripped) > conf.prefixLen &&
+		m.Stripped[0:conf.prefixLen] == conf.Prefix {
 
 		prefixMatch = true
 	}
 
 	if prefixMatch {
 		logger.Debug.Println("Prefix matched!")
-		trimmed := strings.TrimLeft(m.Message[conf.prefixLen:], " ")
+		trimmed := strings.TrimLeft(m.Stripped[conf.prefixLen:], " ")
 
 		if !checkHelp(trimmed, source, m.Room, dispatch) {
 			if !triggerActiveResponders(prefixAResponders, trimmed, source, m,
@@ -49,12 +50,12 @@ func (m *messageBlock) handleMessage(source string,
 			}
 		}
 	} else {
-		logger.Debug.Println("Non-prefix match triggered!")
+		logger.Debug.Println("No prefix match, try non-prefix match")
 
-		if !triggerActiveResponders(noPrefixAResponders, m.Message, source, m,
+		if !triggerActiveResponders(noPrefixAResponders, m.Stripped, source, m,
 			false, dispatch) {
 
-			matched := triggerPassiveResponders(noPrefixPResponders, m.Message,
+			matched := triggerPassiveResponders(noPrefixPResponders, m.Stripped,
 				source, m.Room, m.From, false, dispatch)
 			if !matched && m.Mentioned {
 				trimmed := strings.TrimLeft(m.Stripped, " ")
@@ -62,7 +63,7 @@ func (m *messageBlock) handleMessage(source string,
 				if !checkHelp(trimmed, source, m.Room, dispatch) {
 					logger.Debug.Println("Mention match triggered!")
 
-					if !triggerActiveResponders(mentionAResponders, m.Message,
+					if !triggerActiveResponders(mentionAResponders, m.Stripped,
 						source, m, true, dispatch) {
 
 						triggerPassiveResponders(mentionPResponders, trimmed,
@@ -70,6 +71,8 @@ func (m *messageBlock) handleMessage(source string,
 					}
 				}
 			}
+		} else {
+			logger.Debug.Println("Non-prefix match triggered, no more checking")
 		}
 	}
 }
