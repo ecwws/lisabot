@@ -301,7 +301,7 @@ string would be:
 and the Base64 encoded SHA256-HMAC encoded string would be:
 
 ```
-JT9U+PTcqj6J86f32NHmbN5eZyAuqNSBKfp9GkA5obo=
+YtUmO0cxNkkelXwIHbotcCTrXb2R8sW+twBcelQ2NKA=
 ```
 
 the engagement request would be:
@@ -309,13 +309,13 @@ the engagement request would be:
 ```json
 {
   "type": "command",
-  "source": "hipchat-lisa",
+  "source": "priscilla-slack",
   "to": "server",
   "command": {
     "action": "engage",
     "type":" adapter",
-    "time": 1474339990,
-    "data": "JT9U+PTcqj6J86f32NHmbN5eZyAuqNSBKfp9GkA5obo="
+    "time": 1474340021,
+    "data": "YtUmO0cxNkkelXwIHbotcCTrXb2R8sW+twBcelQ2NKA="
   }
 }
 ```
