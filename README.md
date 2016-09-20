@@ -13,13 +13,15 @@ require re-compiliation of the entire bot's codebase--something you can get away
 with interpreted languages, but not so much in a compiled language. So I took a
 different approach with Priscilla.
 
-## Server-Adapter-Responder Model
+## Server-Client Model
 
-Priscilla consists of three components:
+Priscilla consists of four components (only first three are operational at the
+moment):
 
 * **Priscilla server**
-* **Priscilla Adapter**
-* **Priscilla Responder**
+* **Priscilla Adapter Client**
+* **Priscilla Responder Client**
+* **(Not Yet Implemented) Priscilla Persistent Storage Client**
 
 ### Priscilla Server
 
@@ -30,7 +32,11 @@ respond to messages). Communication protocol is in JSON over TCP and is
 described later in the document. Though mostly stable, it's still in early
 development stage and may change without notice until code base is stable.
 
-### Priscilla Adapter
+Additionally, plan has been made to support a persistent storage client to
+enable an unified persistent storage interface. The work on this is still
+ongoing.
+
+### Priscilla Adapter Client
 
 Adapters are long running Priscilla clients that connects and listens on the chat
 services then forward messages to Priscilla server, and listen for messages from
@@ -45,8 +51,13 @@ all connect to the same Priscilla server the same time, or connect multiple
 HipChat/Slack/IRC organizations through multiple copies of the same adapters
 to the same Priscilla Server.
 
-Currently only one adapter is functional, the HipChat adapter:
-https://github.com/priscillachat/priscilla-hipchat
+Currently two adapters are functional:
+* HipChat adapter: https://github.com/priscillachat/priscilla-hipchat
+* Slack adapter https://github.com/priscillachat/priscilla-slack
+
+Hipchat adapter supports full range of feature Priscilla supports. Slack adapter
+at the moment only supports minimum set of functions to be functional. See
+project page for more details.
 
 Before Priscilla server would recognize the adapter, adapter has to first
 "engage" the Priscilla server with engagement command. This would cause
@@ -54,7 +65,7 @@ Priscilla server to check and either confirm or assign a newly generated unique
 source identifier for the message source. No messages would be forwarded if
 engagement does not succeed.
 
-### Priscilla Responder
+### Priscilla Responder Client
 
 Another unique feature about Priscilla is that because it communicates with
 other components via JSON over TCP, there isn't any requirement that
@@ -100,6 +111,14 @@ only have to specify in the config file how you want the command to be invoked.
 For example, this is how you would implement a "ping" passive responder using
 unix "echo" command, simply put in your Priscilla config file:
 
+### Persistent Storage Client (Concept)
+
+This would be used for facilitating any need for persistence storage in
+Priscilla. The idea is to allow a new type of Priscilla client, Persistent
+Storage Client, to register with Priscilla server and enable new type of command
+query to be routed to it for storing and retrieving data from underlying storage
+facilities.
+
 ```yaml
 responders:
   passive:
@@ -136,9 +155,8 @@ configuration file with **-conf** argument when starting Priscilla server.
 port: 4517    # default port for Priscilla server
 prefix: pris  # default prefix
 prefix-alt: [priscilla $mention cilla] # alternate prefix, not yet implemented
-adapters:     # adapter auto launch, not yet implemented
+adapters:     # adapter could use these section for unified adapter config
   hipchat:
-    exec: /vagrant/dev/golang/bin/priscilla-hipchat
     params:
       user: "priscilla@priscilla.chat"
       pass: "abcdefg"
@@ -164,6 +182,11 @@ responders:
       noprefix: true  # will activate without prefix
       cmd: /usr/priscilla-scripts/cleverbot.sh # a script to curl cleverbot
       args: ["__0__"] # substitute with first submatch
+    - name: wherami
+      match:
+      - ^whereami$
+      cmd: /bin/echo
+      args: ["I'm in __room__"] # priscilla substitute __room__ with room name
     - name: sha256
       match:
       - ^sha256 (.+)$
@@ -238,7 +261,7 @@ long as the communication protocol stays the same).
 		"action": "engage",
 		"type": "adapter",
 		"time": 123456789,
-		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
+		"data": "base64(sha256-HMAC(unixtimestamp+source_identifier+secret))"
 	}
 }
 ```
@@ -253,12 +276,55 @@ long as the communication protocol stays the same).
 		"action": "engage",
 		"type": "responder"
 		"time": 123456789,
-		"data": "sha256-HMAC(unixtimestamp+source_identifier+secret)"
+		"data": "base64(sha256-HMAC(unixtimestamp+source_identifier+secret))"
 	}
 }
 ```
 
 **Note**
+
+To engage with Priscilla server, the client need to send in engagement
+verification string in JSON format descirbed above. To calculate the string,
+concatenate the unix time stamp (in seconds from epoc, as a string), source
+identifier (the name you chose for the adapter), and the secret string that is
+shared between Priscilla server and client. Run it through SHA256-HMAC, the
+Base64 encoded result would be the data string to be sent over.
+
+For example, a source with identifier "priscilla-slack", when engages at time
+1474340021, with secret string being "abcdefghijkl", the pre-SHA256-HMAC encoded
+string would be:
+
+```
+1474340021priscilla-slackabcdefghi
+```
+
+and the Base64 encoded SHA256-HMAC encoded string would be:
+
+```
+JT9U+PTcqj6J86f32NHmbN5eZyAuqNSBKfp9GkA5obo=
+```
+
+the engagement request would be:
+
+```json
+{
+  "type": "command",
+  "source": "hipchat-lisa",
+  "to": "server",
+  "command": {
+    "action": "engage",
+    "type":" adapter",
+    "time": 1474339990,
+    "data": "JT9U+PTcqj6J86f32NHmbN5eZyAuqNSBKfp9GkA5obo="
+  }
+}
+```
+
+Timestamp must be within 10 seconds of server's current time. If the timestamp
+is within range and HMAC matches the server's calculation, a "proceed" command
+will be sent back as acknowledgement. If either time is out of range, or HMAC
+calculation doesn't match, a "terminate" command will be sent back followed by
+closing of the connection.
 
 Other than the "type" field, adapter and responder engagement messages are
 identical. However, Priscilla server treats adapter and responder differently.
@@ -266,12 +332,6 @@ Messages from Adapters, if a "to" field is ever set, it will be ignored as they
 will always go through the pattern matching routine in the dispatcher. Messages
 from responder on the other hand, would never go through a pattern matching
 routine and would be sent directly to the "to" indicated source.
-
-Timestamp must be within 10 seconds of server's current time. If the timestamp
-is within range and HMAC matches the server's calculation, a "proceed" command
-will be sent back as acknowledgement. If either time is out of range, or HMAC
-calculation doesn't match, a "terminate" command will be sent back followed by
-closing of the connection.
 
 ### Engagement success response (S->A, S->R)
 
