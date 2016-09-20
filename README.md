@@ -111,14 +111,6 @@ only have to specify in the config file how you want the command to be invoked.
 For example, this is how you would implement a "ping" passive responder using
 unix "echo" command, simply put in your Priscilla config file:
 
-### Persistent Storage Client (Concept)
-
-This would be used for facilitating any need for persistence storage in
-Priscilla. The idea is to allow a new type of Priscilla client, Persistent
-Storage Client, to register with Priscilla server and enable new type of command
-query to be routed to it for storing and retrieving data from underlying storage
-facilities.
-
 ```yaml
 responders:
   passive:
@@ -145,6 +137,14 @@ responders:
 Do be careful using the substitution, as it may have security concern. I would
 recommend running Prescilla in a jailed environment (i.e. docker) to prevent
 excape.
+
+### Persistent Storage Client (Concept)
+
+This would be used for facilitating any need for persistence storage in
+Priscilla. The idea is to allow a new type of Priscilla client, Persistent
+Storage Client, to register with Priscilla server and enable new type of command
+query to be routed to it for storing and retrieving data from underlying storage
+facilities.
 
 ## Configuration
 
