@@ -52,6 +52,7 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 	// if it's operation to register pattern or command, perform registration
 
 	connMap := make(map[string]*json.Encoder)
+	var adapters []*json.Encoder
 
 	for {
 		req := <-request
@@ -88,6 +89,11 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 						}
 
 						connMap[id] = req.Encoder
+
+						if cmd.Type == "adapter" {
+							adapters = append(adapters, req.Encoder)
+							logger.Debug.Println("New adapter registered:", id)
+						}
 
 						if id != q.Source && q.Source != "" {
 							logger.Warn.Println("Requester's source id already",
@@ -200,7 +206,14 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 			if q.To != "" && q.To != "server" {
 				logger.Debug.Println("Responder message received:", *q.Message)
 				logger.Debug.Println("Query source:", q.Source)
-				if encoder, ok := connMap[q.To]; ok {
+
+				// first check if it's a broadcast message
+				if q.To == "*" {
+					logger.Info.Println("Broadcast message received:", q)
+					for _, adapterEncoder := range adapters {
+						adapterEncoder.Encode(q)
+					}
+				} else if encoder, ok := connMap[q.To]; ok {
 					encoder.Encode(q)
 				} else {
 					logger.Error.Println("Cannot find adapter source for", q.To)

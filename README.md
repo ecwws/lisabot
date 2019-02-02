@@ -458,6 +458,11 @@ the message.
 }
 ```
 
+**Note:** If `to` field is set to `*`, then the message is broadcasted to all
+adapters that are currently engaged to the server. This is the mechanism that is
+used for responder initiated actions, such as notifications, timer based
+actions, etc.
+
 ### Request user information (R->A)
 
 ```json
