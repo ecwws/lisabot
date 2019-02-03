@@ -12,6 +12,7 @@ type messageBlock struct {
 	Stripped      string    `json:"stripped,omitempty"`
 	MentionNotify []string  `json:"mentionnotify,omitempty"`
 	User          *UserInfo `json:"user,omitempty"`
+	DisplayName   string    `json:"displayname,omitempty"`
 }
 
 type UserInfo struct {

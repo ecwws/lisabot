@@ -207,6 +207,10 @@ func dispatcher(request chan *dispatcherRequest, quitChan chan bool) {
 				logger.Debug.Println("Responder message received:", *q.Message)
 				logger.Debug.Println("Query source:", q.Source)
 
+				// some debug log
+				debug, _ := json.Marshal(q)
+				logger.Debug.Println("Query to be sent:", string(debug))
+
 				// first check if it's a broadcast message
 				if q.To == "*" {
 					logger.Info.Println("Broadcast message received:", q)
